@@ -1,0 +1,56 @@
+﻿标题,类型,分类,分组,预估,排期,完成,归档,休息,排序,排期序,记录ID,分组ID,设置值
+项目推进,分组,工作,,,FALSE,FALSE,FALSE,FALSE,0,-1,mviu3ds0el9ra,,
+日常协作,分组,工作,,,FALSE,FALSE,FALSE,FALSE,1,-1,mviu3ds0qseg0,,
+课程学习,分组,自习,,,FALSE,FALSE,FALSE,FALSE,2,-1,mviu3ds09cx5l,,
+阅读积累,分组,自习,,,FALSE,FALSE,FALSE,FALSE,3,-1,mviu3ds0x8ag2,,
+日常生活,分组,生活,,,FALSE,FALSE,FALSE,FALSE,4,-1,mviu3ds01xxdq,,
+运动健康,分组,生活,,,FALSE,FALSE,FALSE,FALSE,5,-1,mviu3ds0r6y6l,,
+休闲出行,分组,生活,,,FALSE,FALSE,FALSE,FALSE,6,-1,mviu3ds0t88ev,,
+整理需求清单，确认本次迭代范围,待办,工作,项目推进,0.5,TRUE,FALSE,FALSE,FALSE,0,0,mviu3ds04upx8,mviu3ds0el9ra,需求梳理
+完成核心页面初稿,待办,工作,项目推进,1,TRUE,FALSE,FALSE,FALSE,1,1,mviu3ds0cmtkk,mviu3ds0el9ra,"{""short"":""页面初稿"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null}"
+根据评审意见调整方案,待办,工作,项目推进,0.5,TRUE,FALSE,FALSE,FALSE,2,2,mviu3ds08ikod,mviu3ds0el9ra,
+汇总验收要点，准备演示,待办,工作,项目推进,0.5,TRUE,FALSE,FALSE,FALSE,3,3,mviu3ds0jup8o,mviu3ds0el9ra,验收准备
+收集下一版改进想法,待办,工作,项目推进,,FALSE,FALSE,FALSE,FALSE,4,4,mviu3ds0gi0og,mviu3ds0el9ra,
+沟通项目进展与待确认事项,待办,工作,日常协作,0.5,TRUE,FALSE,FALSE,FALSE,5,5,mviu3ds04zvpp,mviu3ds0qseg0,"{""short"":""进度沟通"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-10-23"",""p"":0},""e"":null},""dn"":0,""wv"":"""",""plan"":null}"
+整理本周进展与下周重点,待办,工作,日常协作,0.5,FALSE,FALSE,FALSE,FALSE,6,6,mviu3ds01s6vw,mviu3ds0qseg0,本周复盘
+提交本月报销,待办,工作,日常协作,,FALSE,FALSE,FALSE,FALSE,7,7,mviu3ds0cx2f3,mviu3ds0qseg0,
+同步本次会议纪要,待办,工作,日常协作,0.5,FALSE,TRUE,FALSE,FALSE,8,8,mviu3ds0mu7a0,mviu3ds0qseg0,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null}"
+学完当前章节并完成课后练习,待办,自习,课程学习,1.5,TRUE,FALSE,FALSE,FALSE,9,15,mviu3ds0iqdku,mviu3ds09cx5l,"{""short"":""章节练习"",""nb"":"""",""st"":"""",""rq"":{""s"":null,""e"":{""k"":""le"",""d"":""2026-11-26"",""p"":2}},""dn"":0,""wv"":"""",""plan"":null}"
+整理这一章的错题与疑问,待办,自习,课程学习,0.5,FALSE,FALSE,FALSE,FALSE,10,20,mviu3ds01vhzw,mviu3ds09cx5l,
+选一门想学的课程,待办,自习,课程学习,,FALSE,FALSE,FALSE,FALSE,11,21,mviu3ds0ngbwm,mviu3ds09cx5l,
+整理课程资料与学习目录,待办,自习,课程学习,0.5,FALSE,TRUE,TRUE,FALSE,12,22,mviu3ds02khq5,mviu3ds09cx5l,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":1}"
+读完当前一章，记下 3 个要点,待办,自习,阅读积累,0.5,TRUE,FALSE,FALSE,FALSE,13,13,mviu3ds0w1vlb,mviu3ds0x8ag2,章节阅读
+把一条读书笔记整理成卡片,待办,自习,阅读积累,0.5,TRUE,FALSE,FALSE,FALSE,14,17,mviu3ds0cq3z6,mviu3ds0x8ag2,笔记卡片
+收集感兴趣的书和文章,待办,自习,阅读积累,,FALSE,FALSE,FALSE,FALSE,15,23,mviu3ds0zqtxu,mviu3ds0x8ag2,
+整理书桌与文件,待办,生活,日常生活,0.5,TRUE,FALSE,FALSE,FALSE,16,16,mviu3ds0m83v6,mviu3ds01xxdq,整理书桌
+补齐本周日用品,待办,生活,日常生活,,FALSE,FALSE,FALSE,FALSE,17,24,mviu3ds083u29,mviu3ds01xxdq,
+核对本月固定支出,待办,生活,日常生活,,FALSE,FALSE,FALSE,FALSE,18,25,mviu3ds0u34r4,mviu3ds01xxdq,
+洗好并收纳换季衣物,待办,生活,日常生活,0.5,FALSE,TRUE,FALSE,FALSE,19,26,mviu3ds0c494m,mviu3ds01xxdq,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null}"
+跑步 5 公里，结束后拉伸,待办,生活,运动健康,0.5,TRUE,FALSE,FALSE,FALSE,20,14,mviu3ds09fiv8,mviu3ds0r6y6l,跑步拉伸
+安排一次力量训练,待办,生活,运动健康,0.5,TRUE,FALSE,FALSE,FALSE,21,18,mviu3ds0gxst8,mviu3ds0r6y6l,
+休息,待办,生活,休闲出行,0.5,TRUE,FALSE,FALSE,TRUE,22,27,mviu3ds08uuya,mviu3ds0t88ev,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-10-23"",""p"":2},""e"":null},""dn"":0,""wv"":"""",""plan"":null}"
+列出下次出行想去的地方,待办,生活,休闲出行,,FALSE,FALSE,FALSE,FALSE,23,28,mviu3ds0r23rs,mviu3ds0t88ev,
+确认与朋友出游的集合地点,待办,生活,休闲出行,,FALSE,FALSE,FALSE,FALSE,24,29,mviu3ds0pyve6,mviu3ds0t88ev,
+整理上次出行照片,待办,生活,休闲出行,0.5,FALSE,TRUE,TRUE,FALSE,25,30,mviu3ds03u712,mviu3ds0t88ev,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":2}"
+11 月阶段进展沟通,待办,工作,日常协作,0.5,FALSE,FALSE,FALSE,FALSE,26,9,mviu3ds0pe1oi,mviu3ds0qseg0,"{""short"":""阶段沟通"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-11-13"",""p"":0},""e"":null},""dn"":0,""wv"":"""",""plan"":null}"
+整理下一阶段的方案与材料,待办,工作,项目推进,1.5,FALSE,FALSE,FALSE,FALSE,27,10,mviu3ds08sgsw,mviu3ds0el9ra,"{""short"":""阶段方案"",""nb"":"""",""st"":"""",""rq"":{""s"":null,""e"":{""k"":""eq"",""d"":""2026-11-20"",""p"":1}},""dn"":0,""wv"":"""",""plan"":null}"
+完成专题练习并整理笔记,待办,自习,课程学习,1.5,FALSE,FALSE,FALSE,FALSE,28,31,mviu3ds06crmq,mviu3ds09cx5l,"{""short"":""专题练习"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""ge"",""d"":""2026-11-14"",""p"":0},""e"":{""k"":""le"",""d"":""2026-11-28"",""p"":1}},""dn"":0,""wv"":"""",""plan"":null}"
+准备 11 月出行物品,待办,生活,休闲出行,0.5,FALSE,FALSE,FALSE,FALSE,29,32,mviu3ds03yi9i,mviu3ds0t88ev,"{""short"":""出行准备"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""ge"",""d"":""2026-11-19"",""p"":2},""e"":{""k"":""le"",""d"":""2026-11-22"",""p"":2}},""dn"":0,""wv"":"""",""plan"":null}"
+休息,待办,生活,休闲出行,1,FALSE,FALSE,FALSE,TRUE,30,33,mviu3ds0r7spl,mviu3ds0t88ev,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-11-21"",""p"":0},""e"":null},""dn"":0,""wv"":"""",""plan"":null}"
+记录下一阶段想尝试的改进,待办,工作,项目推进,,FALSE,FALSE,FALSE,FALSE,31,11,mviu3ds0adf7r,mviu3ds0el9ra,
+整理值得回看的读书笔记,待办,自习,阅读积累,,FALSE,FALSE,FALSE,FALSE,32,34,mviu3ds04tmwq,mviu3ds0x8ag2,
+列好年底前想完成的小事,待办,生活,日常生活,,FALSE,FALSE,FALSE,FALSE,33,35,mviu3ds0twewr,mviu3ds01xxdq,
+整理上一个专题的复习清单,待办,自习,课程学习,0.5,FALSE,TRUE,TRUE,FALSE,34,36,mviu3ds0s52yi,mviu3ds09cx5l,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":3}"
+归纳上一章的练习要点,待办,自习,课程学习,0.5,FALSE,TRUE,TRUE,FALSE,35,37,mviu3ds0mmhzb,mviu3ds09cx5l,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":4}"
+准备一周晚餐食材,待办,生活,日常生活,0.5,TRUE,FALSE,FALSE,FALSE,36,19,mviu3ds0grd6s,mviu3ds01xxdq,准备食材
+确认下周需要协作的事项,待办,工作,日常协作,,FALSE,FALSE,FALSE,FALSE,37,12,mviu3ds08isx8,mviu3ds0qseg0,
+记下一个值得继续了解的问题,待办,自习,阅读积累,,FALSE,FALSE,FALSE,FALSE,38,38,mviu3ds0nbzkt,mviu3ds0x8ag2,
+挑一个天气合适的近郊路线,待办,生活,休闲出行,,FALSE,FALSE,FALSE,FALSE,39,39,mviu3ds0injqn,mviu3ds0t88ev,
+dayOverrides,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:dayOverrides,,{}
+view,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:view,,"""group"""
+calMonth,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:calMonth,,"""2026-10"""
+lastGroup,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:lastGroup,,"""mviu3ds0el9ra"""
+archOpen,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:archOpen,,false
+archFold,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:archFold,,{}
+collapsed,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:collapsed,,{}
+tick,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:tick,,null
