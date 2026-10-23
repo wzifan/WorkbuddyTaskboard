@@ -40,5 +40,4 @@ git clone https://github.com/wzifan/WorkbuddyTaskboard.git
 
 #### 开源协议
 
-**Apache License 2.0**
-完整条款见 [LICENSE](./LICENSE)，归属声明见 [NOTICE](./NOTICE)。
+Apache License 2.0
