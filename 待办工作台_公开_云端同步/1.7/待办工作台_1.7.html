@@ -224,6 +224,9 @@ svg{display:inline-block;vertical-align:middle}
 .est button{width:24px;height:26px;color:var(--muted);font-size:15px;display:flex;align-items:center;justify-content:center}   /* flex 视觉垂直居中 */
 .est button svg{width:14px;height:14px;display:block}   /* 列表预估与属性里的已完成共用同一套图标尺寸 */
 #dlgDnRow .est{align-self:flex-start}   /* 不要被弹窗列宽拉成一整条，保持和列表里的预估按钮一样宽 */
+#dlgDnRow.locked .est{background:#f7f8fa;border-color:#e6eaf1}   /* 固定开始已过去：已完成随日期自动，控件锁定 */
+#dlgDnRow.locked .est button,#dlgDnRow.locked .est button:hover{color:#c9d0dc;background:none;cursor:default}
+#dlgDnRow.locked #dlgDnVal{cursor:default}
 .est button:hover{background:#f1f3f7;color:var(--text)}
 .est .val{min-width:32px;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;cursor:text}   /* 数字 flex 垂直居中，点击可直接输入 */
 .est .val.empty{color:var(--faint)}
@@ -1153,7 +1156,7 @@ function setEst(t, n) {
     if (floor > 0) { t.est = floor; t.done = true; return; }
     t.est = null; t.dn = 0; t.sched = false; t.nb = null; t.st = null; t.plan = null; t.done = false; return;
   }
-  if (n < floor) n = floor;
+  if (n < floor && !t.done) n = floor;   // 未完成的：预估不能低于已完成；已完成的：预估减小时已完成跟着降到同一个值（见 syncProgress）
   t.est = Math.min(60, Math.round(n * 2) / 2);
   syncProgress(t);
   if (t.done) { t.st = null; t.plan = null; }
@@ -1181,6 +1184,18 @@ function makeLine(track, from) {
   };
   const floor = sl => { const i = ceil(sl), x = get(i); return x && cmpSlot(x, sl) === 0 ? i : i - 1; };   // 最后一个不晚于 sl 的可用格
   return { get, ceil, floor };
+}
+/* 固定开始、参与排期且开始时间已经过去：进度由时间自动跟随。
+   passed = 固定开始的那一刻到当前时段已经过去的半天数（当前时段不算），dn 不超过预估；返回 null 表示不受此规则约束 */
+function autoProgress(t) {
+  if (!t || !t.sched || t.archived) return null;
+  const s = t.rq && t.rq.s;
+  if (!s || s.k !== 'eq') return null;
+  const from = reqSlot(s, 's'), L = makeLine(trackOf(t), from);
+  const a = L.ceil(from), b = L.ceil(nowInfo());
+  if (a == null || b == null || !(b > a)) return null;   // 还没开始，或固定开始就在当前时段：进度仍是 0
+  const passed = (b - a) / 2;
+  return { passed, dn: Math.min(Math.max(0, t.est || 0), passed) };
 }
 /* 排期不变量（改布局前先对照）。工作 / 非工作两条时间线各自独立，每条按下面的顺序排：
    ① 固定开始 / 固定结束时间的待办占住要求的时段（定死，不随其他待办挪动）；
@@ -1229,8 +1244,14 @@ function computeLayout(excludeId, from, opt) {
         ? (o.k === 'le' ? E <= L.floor(reqSlot(o, 'e')) : E >= L.ceil(reqSlot(o, 'e')))
         : (o.k === 'le' ? S <= L.floor(reqSlot(o, 's')) : S >= L.ceil(reqSlot(o, 's'))));
       if (!okOther) { issues.set(t.id, `「${reqText(fr, side)}」与「${reqText(o, side === 's' ? 'e' : 's')}」对不上（按预估用时算）`); continue; }
+      /* 固定开始的那一刻不能被别的固定待办占住（包括它已完成的那段）：两条固定待办不能叠在同一段里 */
+      if (side === 's') {
+        const occ = taken.get(anchor);
+        if (occ != null && occ !== t.id) { issues.set(t.id, `与「${displayTitle(todoById(occ))}」的固定时间冲突`); continue; }
+      }
       const h = hitAt(S, n);
       if (h !== null) { issues.set(t.id, `与「${displayTitle(todoById(taken.get(h)))}」的固定时间冲突`); continue; }
+      if (side === 's' && nDone > 0) for (let i = anchor; i < anchor + nDone; i++) taken.set(i, t.id);   // 已完成的那段也占住，别人的固定开始落进来算冲突
       put(t.id, S, n, null); fixed.add(t.id); pinned.add(t.id);
     }
     /* ② 进行中：与固定时间冲突时放弃，按顺序重新排 */
@@ -1390,6 +1411,13 @@ function rollTime() {
   for (const t of state.todos) {
     if (t.archived || t.done || !t.sched) continue;
     if (deadlinePassed(t, now) && !forgiven(t, reqSlot(t.rq.e, 'e'))) { finishAll(t); n++; changed = true; continue; }
+    /* 固定开始且开始已经过去：进度直接按「开始到现在」算，不依赖排期快照，快照缺失或落后时也不会停在中途 */
+    const ap = autoProgress(t);
+    if (ap && (t.est || 0) > 0) {
+      const dn = Math.min(t.est, ap.passed);   // 已完成 = min(预估, 开始到现在的间隔)：手动改过的值也以时间为准
+      if (dn !== dnOf(t)) { t.dn = dn; changed = true; }
+      if (t.dn + 1e-9 >= t.est) { finishAll(t); n++; changed = true; continue; }
+    }
     const sp = legacy && legacy.spans.get(t.id);
     const plan = t.plan || { dn: dnOf(t), slots: sp ? sp.slots : [] };
     const passed = plan.slots.filter(sl => cmpSlot(sl, now) < 0 && !forgiven(t, sl)).length;
@@ -2023,7 +2051,7 @@ function fixedStartTooEarly(rq) {
 function reqPreview(t, rq) {
   if (!rq) return '';
   if (!t.sched || t.done) return aloneIssue(t, rq);
-  const early = fixedStartTooEarly(rq); if (early) return early;   // 已排期不能把固定开始设到当前时段之前；已经设过的仍由时间滚动接着算
+  /* 固定开始可以设在过去的时段：设完后已完成按「开始到现在」自动跟进，由时间滚动接着算 */
   const keep = { rq: t.rq, sched: t.sched, st: t.st, nb: t.nb, est: t.est, dn: t.dn, done: t.done };
   t.sched = true; t.st = null; t.nb = null; if (!t.est) t.est = 0.5;
   const base = computeLayout();
@@ -2048,9 +2076,29 @@ function reqDlg(t) {
       if (stray) stray.replaceWith(dnVal); else plus.before(dnVal);
     }
     dnRow.hidden = !(maxDn > 0);
+    /* 固定开始、参与排期：已完成只由时间决定，还没开始就是 0，已过去多少就是多少，不能手动改 */
+    let dnLockStarted = false;
+    const autoDn = () => {
+      if (!t.sched || !(maxDn > 0)) return null;
+      const s = dr.s; if (!s || s.k !== 'eq') return null;
+      const from = reqSlot(s, 's'), L = makeLine(track, from);
+      const passed = (L.ceil(nowInfo()) - L.ceil(from)) / 2;
+      dnLockStarted = passed > 1e-9;
+      return t.done ? Math.min(maxDn, dnOf(t)) : Math.min(maxDn, Math.max(0, passed));   // 已完成的保持原值，只锁住不让改
+    };
+    let dnLock = autoDn();
+    if (dnLock != null) dn = dnLock;
     const paintDn = () => {
       dnVal.classList.toggle('empty', !(dn > 0));
       dnVal.innerHTML = (dn > 0 ? fmtEst(dn) : '\u2014') + '<small>半天</small>';   // 0 与列表预估空值一样显示为 —
+    };
+    const paintLock = () => {   // 随弹窗里选的开始时间实时变化：改成过去的固定开始时同样锁住
+      dnLock = autoDn();
+      if (dnLock != null) dn = dnLock;
+      dnRow.classList.toggle('locked', dnLock != null);
+      dnRow.querySelectorAll('button').forEach(b => { b.disabled = dnLock != null; });
+      dnVal.setAttribute('aria-disabled', dnLock != null ? 'true' : 'false');
+      paintDn();
     };
     paintDn();
     /* 非法输入收到最近的合法值（0.5 的倍数，且在 0～预估之间），并用底部黑底白字提示 */
@@ -2072,6 +2120,7 @@ function reqDlg(t) {
     let dnEditing = false;
     const beginDnEdit = () => {
       if (dnEditing || !dnVal.isConnected) return;
+      if (dnLock != null) { toast('固定开始时间已经过去，已完成随已过去的半天数自动推进，不能手动调整', 3000); return; }
       dnEditing = true;
       const input = document.createElement('input');
       input.className = 'inline-edit est-num'; input.type = 'number'; input.step = '0.5'; input.min = '0'; input.inputMode = 'decimal'; input.autocomplete = 'off';
@@ -2120,10 +2169,14 @@ function reqDlg(t) {
         else if (daysBetween(today(), r.d) > 1100 || daysBetween(today(), r.d) < -366) err = `${name}日期请选在前后三年以内`;
         else if (limited && !periodOk(track, r.d, r.p)) err = `${shortDate(r.d)} ${[0, 1, 2].some(p => periodOk(track, r.d, p)) ? PERIOD_NAME[r.p] + '不能选' : '这天不能选'}：${trackTimeText(track)}`;
       }
+      paintLock();   // 先按当前选的开始时间确定已完成能不能改
       if (!err) err = reqPreview(t, cleanReq({ s: dr.s.k ? dr.s : null, e: dr.e.k ? dr.e : null }));
       const tips = [];
       if (dr.s.k || dr.e.k) tips.push('开始要求按所选时段的开始时刻算，结束要求按所选时段的结束时刻算。');
-      if (maxDn > 0) tips.push('已完成不能超过预估；等于预估时标为已完成，少于预估时标为未完成。');
+      if (maxDn > 0) tips.push(dnLock != null
+        ? (dnLockStarted ? '固定开始时间已经过去，已完成随已过去的半天数自动推进（不超过预估），不能手动调整。'
+                         : '固定开始时间还没到，已完成由时间自动推进（到点后按已过去的半天数计），不能手动调整。')
+        : '已完成不能超过预估；等于预估时标为已完成，少于预估时标为未完成。');
       note.innerHTML = (err ? `<span class="rq-err">不能这样设置：${esc(err)}</span>` : '') + esc(tips.join(''));
       okBtn.disabled = !!err;
     };
@@ -2146,7 +2199,7 @@ function reqDlg(t) {
     dlgResolve = ok => {
       if (!ok || err) return resolve(null);
       const pick = r => r.k && validDate(r.d) ? { k: r.k, d: r.d, p: r.p } : null;
-      resolve({ s: pick(dr.s), e: pick(dr.e), dn: maxDn > 0 ? dn : null });
+      resolve({ s: pick(dr.s), e: pick(dr.e), dn: maxDn > 0 ? dn : null, auto: dnLock != null });
     };
     const msg = document.getElementById('dlgMsg'); msg.textContent = '属性设置'; msg.classList.add('is-title');
     document.getElementById('dlgInput').hidden = true; box.hidden = false; sync();
@@ -2266,12 +2319,22 @@ function actCal(act, btn, e) {
   if (!n) { toast('没有手动修改过的日期，当前即官方日历'); return; }
   confirmDlg(`把 ${n} 个手动改过的日期（上班 / 休息）全部恢复为官方日历安排？`).then(ok => { if (ok) { state.dayOverrides = {}; dayCache.clear(); commit(); toast('已同步官方日历'); } });
 }
-/* 有预估：勾选在「已完成 = 预估」和「已完成 = 0」之间切换。无预估：只翻完成标记。取消完成时 wv 挡住已经过去的格子被自动补记 */
+/* 有预估：勾选在「已完成 = 预估」和「已完成 = 0」之间切换。无预估：只翻完成标记。
+   取消完成时 wv 挡住已经过去的格子被自动补记；固定开始且已经开始过去的，改把进度补到「开始到现在」并让预估至少覆盖当前时段（见 autoProgress） */
 function actProgress(t) {
   if (!t) return;
   settleBeforeEdit();
   if ((t.est || 0) > 0) {
-    if (t.done || dnOf(t) + 1e-9 >= t.est) { t.dn = 0; markWaive(t); }
+    if (t.done || dnOf(t) + 1e-9 >= t.est) {
+      const ap = autoProgress(t);
+      if (ap) {
+        /* 进度已经过去的时段本来就在走：已完成设为开始到现在的间隔，预估抬到能覆盖当前时段（已完成 + 0.5）。
+           否则取消完成后排期还停在很久以前，进度条只盖住开头一小段 */
+        t.dn = ap.passed;
+        t.est = Math.max(t.est, Math.round((ap.passed + 0.5) * 2) / 2);
+        t.wv = null;
+      } else { t.dn = 0; markWaive(t); }
+    }
     else { t.dn = t.est; t.wv = null; }
     syncProgress(t);
   } else { t.done = !t.done; if (!t.done) { t.dn = 0; markWaive(t); } else t.wv = null; }
@@ -2308,7 +2371,12 @@ function actSched(t) {
   if (!t) return;
   settleBeforeEdit();
   if (t.sched) { t.sched = false; t.nb = null; t.st = null; t.plan = null; commit(); return; }
-  const empty = !t.est, why = tryChange(t, x => { x.sched = true; x.nb = null; x.st = null; x.plan = null; if (!x.est) x.est = 0.5; });
+  const empty = !t.est, why = tryChange(t, x => {
+    x.sched = true; x.nb = null; x.st = null; x.plan = null; if (!x.est) x.est = 0.5;
+    /* 固定开始且已经开始过去：进度按时间直接对齐（预估与已过去半天数取小），未排期时手改的已完成不再保留 */
+    const ap = autoProgress(x);
+    if (ap) { x.dn = Math.min(x.est, ap.passed); x.wv = null; syncProgress(x); }
+  });
   if (why) { toast(why, 3600); return; }
   commit(); if (empty) toast('预估为空，已按 0.5 半天排期');
 }
@@ -2324,8 +2392,7 @@ function actArchiveCmd(act, t, id, e) {
   if (act === 'restore') {
     if (!t) return;
     t.archived = false; t.ao = null;
-    if ((t.est || 0) > 0 && dnOf(t) + 1e-9 >= t.est) t.dn = Math.max(0, Math.round((t.est - 0.5) * 2) / 2);
-    syncProgress(t); if (!t.done) markWaive(t); if (!(t.est > 0)) t.done = false;
+    syncProgress(t);   // 恢复后保持原来的完成状态，已完成 / 预估的半天数都不变
     commit();
     return;
   }
@@ -2471,7 +2538,7 @@ function actMenu(act, t, id, btn, wasOpenOn, inMenu) {
     if (far(res.s) || far(res.e)) { toast('时间要求的日期请选在前后三年以内', 3000); return; }
     const had = hasReq(t);
     t.rq = cleanReq(res); t.st = null; t.nb = null; t.plan = null;
-    if (res.dn != null && (t.est || 0) > 0) { t.dn = res.dn; syncProgress(t); if (t.done) t.wv = null; else markWaive(t); }
+    if (res.dn != null && (t.est || 0) > 0) { t.dn = res.dn; syncProgress(t); if (res.auto || t.done) t.wv = null; else markWaive(t); }
     let msg = t.rq ? `已设置时间要求：${reqLabel(t)}` : had ? '已清除时间要求' : '';
     if (res.dn != null && (t.est || 0) > 0) msg = (msg ? msg + '。' : '') + `已完成 ${fmtEst(t.dn)} 半天`;
     if (t.rq && !t.sched) msg += '（打开「排期」后生效）';
