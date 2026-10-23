@@ -37,3 +37,11 @@ git clone https://github.com/wzifan/WorkbuddyTaskboard.git
 
 ###### 2. 使用将本地文件同步至Workbuddy资料库，使其成为可云端同步、多端访问的待办工作台
 工作目录选择 `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}` ，专家选择 `工作台搭建师`，提示词在 `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}/加载到云端的提示词.txt` 中。
+
+#### 开源协议
+
+本项目采用 **Apache License 2.0** 授权，Copyright 2026 wzifan，完整条款见 [LICENSE](LICENSE)，归属声明见 [NOTICE](NOTICE)。
+
+你可以自由使用、修改和分发本项目（含商业用途），需要履行的义务有三条：保留版权与许可声明；分发时一并提供 LICENSE 与 NOTICE 文件；修改过的文件标注变更说明。该协议还包含明确的专利授权，以及对项目名称与商标的保留条款。
+
+> 说明：2026-10-24 之前的提交与已发布版本仍适用 MIT 协议，本次授权变更不影响已经获得授权的旧版本。
