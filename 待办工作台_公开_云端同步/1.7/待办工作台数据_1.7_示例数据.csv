@@ -1,0 +1,56 @@
+﻿标题,类型,分类,分组,预估,排期,完成,归档,休息,排序,排期序,记录ID,分组ID,设置值
+项目推进,分组,工作,,,FALSE,FALSE,FALSE,FALSE,0,-1,mvl3xa287o1jd,,
+日常协作,分组,工作,,,FALSE,FALSE,FALSE,FALSE,1,-1,mvl3xa28p0hgn,,
+课程学习,分组,自习,,,FALSE,FALSE,FALSE,FALSE,2,-1,mvl3xa28ibbey,,
+阅读积累,分组,自习,,,FALSE,FALSE,FALSE,FALSE,3,-1,mvl3xa28jf226,,
+日常生活,分组,生活,,,FALSE,FALSE,FALSE,FALSE,4,-1,mvl3xa2831l50,,
+运动健康,分组,生活,,,FALSE,FALSE,FALSE,FALSE,5,-1,mvl3xa28wlcp7,,
+休闲出行,分组,生活,,,FALSE,FALSE,FALSE,FALSE,6,-1,mvl3xa2830b3p,,
+整理需求清单，确认本次迭代范围,待办,工作,项目推进,0.5,TRUE,FALSE,FALSE,FALSE,0,0,mvl3xa28b1zeh,mvl3xa287o1jd,"{""short"":""需求梳理"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-26#1""]}}"
+完成核心页面初稿,待办,工作,项目推进,1,TRUE,FALSE,FALSE,FALSE,1,1,mvl3xa28o3puc,mvl3xa287o1jd,"{""short"":""页面初稿"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":{""dn"":0.5,""slots"":[""2026-10-26#2""]}}"
+根据评审意见调整方案,待办,工作,项目推进,0.5,TRUE,FALSE,FALSE,FALSE,2,2,mvl3xa28ecd3v,mvl3xa287o1jd,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-26#3""]}}"
+汇总验收要点，准备演示,待办,工作,项目推进,0.5,TRUE,FALSE,FALSE,FALSE,3,3,mvl3xa28aucn3,mvl3xa287o1jd,"{""short"":""验收准备"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-27#0""]}}"
+收集下一版改进想法,待办,工作,项目推进,,FALSE,FALSE,FALSE,FALSE,4,4,mvl3xa28z3uiy,mvl3xa287o1jd,
+沟通项目进展与待确认事项,待办,工作,日常协作,0.5,TRUE,FALSE,FALSE,FALSE,5,5,mvl3xa28ztw84,mvl3xa28p0hgn,"{""short"":""进度沟通"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-10-26"",""p"":0},""e"":null},""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-26#0""]}}"
+整理本周进展与下周重点,待办,工作,日常协作,0.5,FALSE,FALSE,FALSE,FALSE,6,6,mvl3xa28u7pb3,mvl3xa28p0hgn,本周复盘
+提交本月报销,待办,工作,日常协作,,FALSE,FALSE,FALSE,FALSE,7,7,mvl3xa28xnyn4,mvl3xa28p0hgn,
+同步本次会议纪要,待办,工作,日常协作,0.5,FALSE,TRUE,FALSE,FALSE,8,8,mvl3xa28nnhgc,mvl3xa28p0hgn,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null}"
+学完当前章节并完成课后练习,待办,自习,课程学习,1.5,TRUE,FALSE,FALSE,FALSE,9,15,mvl3xa28768b5,mvl3xa28ibbey,"{""short"":""章节练习"",""nb"":"""",""st"":"""",""rq"":{""s"":null,""e"":{""k"":""le"",""d"":""2026-11-27"",""p"":2}},""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-24#1"",""2026-10-24#2"",""2026-10-24#3""]}}"
+整理这一章的错题与疑问,待办,自习,课程学习,0.5,FALSE,FALSE,FALSE,FALSE,10,20,mvl3xa28gvsal,mvl3xa28ibbey,
+选一门想学的课程,待办,自习,课程学习,,FALSE,FALSE,FALSE,FALSE,11,21,mvl3xa28qrrnk,mvl3xa28ibbey,
+整理课程资料与学习目录,待办,自习,课程学习,0.5,FALSE,TRUE,TRUE,FALSE,12,22,mvl3xa28zjzqu,mvl3xa28ibbey,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":1}"
+读完当前一章，记下 3 个要点,待办,自习,阅读积累,0.5,TRUE,FALSE,FALSE,FALSE,13,13,mvl3xa28bvq01,mvl3xa28jf226,"{""short"":""章节阅读"",""nb"":"""",""st"":""2026-10-23#4"",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-23#4""]}}"
+把一条读书笔记整理成卡片,待办,自习,阅读积累,0.5,TRUE,FALSE,FALSE,FALSE,14,17,mvl3xa286m7e3,mvl3xa28jf226,"{""short"":""笔记卡片"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-25#1""]}}"
+收集感兴趣的书和文章,待办,自习,阅读积累,,FALSE,FALSE,FALSE,FALSE,15,23,mvl3xa28amssl,mvl3xa28jf226,
+整理书桌与文件,待办,生活,日常生活,0.5,TRUE,FALSE,FALSE,FALSE,16,16,mvl3xa28nr1ds,mvl3xa2831l50,"{""short"":""整理书桌"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-25#0""]}}"
+补齐本周日用品,待办,生活,日常生活,,FALSE,FALSE,FALSE,FALSE,17,24,mvl3xa28w5467,mvl3xa2831l50,
+核对本月固定支出,待办,生活,日常生活,,FALSE,FALSE,FALSE,FALSE,18,25,mvl3xa28pxr3h,mvl3xa2831l50,
+洗好并收纳换季衣物,待办,生活,日常生活,0.5,FALSE,TRUE,FALSE,FALSE,19,26,mvl3xa2889yie,mvl3xa2831l50,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null}"
+跑步 5 公里，结束后拉伸,待办,生活,运动健康,0.5,TRUE,FALSE,FALSE,FALSE,20,14,mvl3xa28ioh9s,mvl3xa28wlcp7,"{""short"":""跑步拉伸"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-24#0""]}}"
+安排一次力量训练,待办,生活,运动健康,0.5,TRUE,FALSE,FALSE,FALSE,21,18,mvl3xa28bc25u,mvl3xa28wlcp7,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-25#2""]}}"
+休息,待办,生活,休闲出行,0.5,TRUE,FALSE,FALSE,TRUE,22,27,mvl3xa28khyqk,mvl3xa2830b3p,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-10-24"",""p"":2},""e"":null},""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-24#4""]}}"
+列出下次出行想去的地方,待办,生活,休闲出行,,FALSE,FALSE,FALSE,FALSE,23,28,mvl3xa28dfg16,mvl3xa2830b3p,
+确认与朋友出游的集合地点,待办,生活,休闲出行,,FALSE,FALSE,FALSE,FALSE,24,29,mvl3xa28s7y7n,mvl3xa2830b3p,
+整理上次出行照片,待办,生活,休闲出行,0.5,FALSE,TRUE,TRUE,FALSE,25,30,mvl3xa281oy6e,mvl3xa2830b3p,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":2}"
+11 月阶段进展沟通,待办,工作,日常协作,0.5,FALSE,FALSE,FALSE,FALSE,26,9,mvl3xa28wkpk0,mvl3xa28p0hgn,"{""short"":""阶段沟通"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-11-13"",""p"":0},""e"":null},""dn"":0,""wv"":"""",""plan"":null}"
+整理下一阶段的方案与材料,待办,工作,项目推进,1.5,FALSE,FALSE,FALSE,FALSE,27,10,mvl3xa28ie5lk,mvl3xa287o1jd,"{""short"":""阶段方案"",""nb"":"""",""st"":"""",""rq"":{""s"":null,""e"":{""k"":""eq"",""d"":""2026-11-20"",""p"":1}},""dn"":0,""wv"":"""",""plan"":null}"
+完成专题练习并整理笔记,待办,自习,课程学习,1.5,FALSE,FALSE,FALSE,FALSE,28,31,mvl3xa28qy9m8,mvl3xa28ibbey,"{""short"":""专题练习"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""ge"",""d"":""2026-11-14"",""p"":0},""e"":{""k"":""le"",""d"":""2026-11-28"",""p"":1}},""dn"":0,""wv"":"""",""plan"":null}"
+准备 11 月出行物品,待办,生活,休闲出行,0.5,FALSE,FALSE,FALSE,FALSE,29,32,mvl3xa28x4d5h,mvl3xa2830b3p,"{""short"":""出行准备"",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""ge"",""d"":""2026-11-19"",""p"":2},""e"":{""k"":""le"",""d"":""2026-11-22"",""p"":2}},""dn"":0,""wv"":"""",""plan"":null}"
+休息,待办,生活,休闲出行,1,FALSE,FALSE,FALSE,TRUE,30,33,mvl3xa28i0iip,mvl3xa2830b3p,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":{""s"":{""k"":""eq"",""d"":""2026-11-21"",""p"":0},""e"":null},""dn"":0,""wv"":"""",""plan"":null}"
+记录下一阶段想尝试的改进,待办,工作,项目推进,,FALSE,FALSE,FALSE,FALSE,31,11,mvl3xa284oar2,mvl3xa287o1jd,
+整理值得回看的读书笔记,待办,自习,阅读积累,,FALSE,FALSE,FALSE,FALSE,32,34,mvl3xa28skl2z,mvl3xa28jf226,
+列好年底前想完成的小事,待办,生活,日常生活,,FALSE,FALSE,FALSE,FALSE,33,35,mvl3xa28pq7xy,mvl3xa2831l50,
+整理上一个专题的复习清单,待办,自习,课程学习,0.5,FALSE,TRUE,TRUE,FALSE,34,36,mvl3xa28fysgz,mvl3xa28ibbey,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":3}"
+归纳上一章的练习要点,待办,自习,课程学习,0.5,FALSE,TRUE,TRUE,FALSE,35,37,mvl3xa282v4jb,mvl3xa28ibbey,"{""short"":"""",""nb"":"""",""st"":"""",""rq"":null,""dn"":0.5,""wv"":"""",""plan"":null,""ao"":4}"
+准备一周晚餐食材,待办,生活,日常生活,0.5,TRUE,FALSE,FALSE,FALSE,36,19,mvl3xa28290bi,mvl3xa2831l50,"{""short"":""准备食材"",""nb"":"""",""st"":"""",""rq"":null,""dn"":0,""wv"":"""",""plan"":{""dn"":0,""slots"":[""2026-10-25#3""]}}"
+确认下周需要协作的事项,待办,工作,日常协作,,FALSE,FALSE,FALSE,FALSE,37,12,mvl3xa28r6mjf,mvl3xa28p0hgn,
+记下一个值得继续了解的问题,待办,自习,阅读积累,,FALSE,FALSE,FALSE,FALSE,38,38,mvl3xa28bjirv,mvl3xa28jf226,
+挑一个天气合适的近郊路线,待办,生活,休闲出行,,FALSE,FALSE,FALSE,FALSE,39,39,mvl3xa28dkq5z,mvl3xa2830b3p,
+dayOverrides,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:dayOverrides,,{}
+view,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:view,,"""group"""
+calMonth,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:calMonth,,"""2026-10"""
+lastGroup,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:lastGroup,,"""mvl3xa287o1jd"""
+archOpen,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:archOpen,,false
+archFold,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:archFold,,{}
+collapsed,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:collapsed,,{}
+tick,设置,,,,FALSE,FALSE,FALSE,FALSE,-1,-1,setting:tick,,"{""d"":""2026-10-23"",""s"":4}"
