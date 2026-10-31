@@ -566,7 +566,7 @@ const CAT_IDX = Object.fromEntries(CATS.map((c, i) => [c.id, i]));
 const PERIOD_NAME = ['上午', '下午', '晚上'];
 const SLOT_PERIOD = [0, 0, 1, 1, 2];
 const WEEK = ['一', '二', '三', '四', '五', '六', '日'];
-const STORE_KEY = 'todo-workbench-pub18-v1';   // 本地缓存键，与其它版本互不影响
+const STORE_KEY = 'todo-workbench-pub18-v7';   // 本地缓存键，与其它版本互不影响
 /* 时间要求（⋯ → 属性）：rq = { s: 开始要求, e: 结束要求 }，每项 { k: 'eq' 固定 / 'le' 不晚于 / 'ge' 不早于, d: 日期, p: 0 上午 / 1 下午 / 2 晚上 }。
    开始要求取所选时段的开始时刻，结束要求取所选时段的结束时刻；两端不能同时固定 */
 const REQ_K = { eq: '固定', le: '不晚于', ge: '不早于' };
@@ -716,7 +716,7 @@ try {   // 若缓存属于另一个数据表（页面换绑过），丢弃旧缓
 /* ================= state ================= */
 let state = load() || seed();
 normalizeTodos(state.todos);
-state.dragId = null; state.addingGroup = null; state.addAt = null; state.calMonth = monthStr(today());
+state.dragId = null; state.addingGroup = null; state.addAt = null; state.calMonth = monthStr(today() < '2026-11-02' ? '2026-11-02' : today());
 if (!state.dayOverrides) state.dayOverrides = {};
 if (!state.collapsed) state.collapsed = {};
 if (!state.view) state.view = 'sched';
@@ -993,94 +993,1375 @@ function cloudBoot() {
   }).catch(function (err) { console.error('[cloud] load error:', err); toast('云端连接失败，本次使用本地数据'); });
 }
 
-/* 示例数据（通用场景）：首次打开、本地无缓存时载入；多数事项只记录，少量近期任务参与排期 */
+/* 示例数据：与配套 CSV 共用固定的初始排期；只更新示例内容和同一排期线内的类别 */
 function seed() {
-  const g = (cat, name) => ({ id: uid(), cat, name });
-  const gs = {
-    wP: g('work', '项目推进'), wD: g('work', '日常协作'),
-    sC: g('study', '课程学习'), sR: g('study', '阅读积累'),
-    lD: g('life', '日常生活'), lH: g('life', '运动健康'), lT: g('life', '休闲出行')
-  };
-  const t = (groupId, title, est = null, sched = false, extra = {}) => ({ id: uid(), groupId, title, est, sched, done: false, archived: false, rest: false, short: '', ...extra });
-  // 相对打开当天选取将来的工作日 / 休息日，兼顾节假日与调休；不读取尚未初始化的 state。
-  const nextDay = (n, workday) => {
-    let d = addDays(today(), n);
-    for (;;) {
-      const o = officialMap[d], f = festivalOf(d);
-      const work = OFFICIAL[+d.slice(0, 4)] ? (o ? o === 'work' : dow(d) < 5) : dow(d) < 5 && !(f && f.st);
-      if (work === workday) return d;
-      d = addDays(d, 1);
+  // 时间要求、预估、进度、顺序和排期快照保持不变；载入后继续按真实时间结算。
+  return {
+  "groups": [
+    {
+      "id": "mvyhslc0ixbpz",
+      "cat": "work",
+      "name": "项目与作品集"
+    },
+    {
+      "id": "mvyhslc01nkhv",
+      "cat": "work",
+      "name": "实习与求职"
+    },
+    {
+      "id": "mvyhslc0z2f10",
+      "cat": "study",
+      "name": "技能进阶"
+    },
+    {
+      "id": "mvyhslc0o5bus",
+      "cat": "study",
+      "name": "阅读与表达"
+    },
+    {
+      "id": "mvyhslc0xvji5",
+      "cat": "life",
+      "name": "日常管理"
+    },
+    {
+      "id": "mvyhslc00mzx3",
+      "cat": "life",
+      "name": "运动与健康"
+    },
+    {
+      "id": "mvyhslc0ttozh",
+      "cat": "life",
+      "name": "个人计划"
     }
-  };
-  // 演示期保留 11 月中下旬的固定安排；更晚首次打开时才后移，已有缓存不重置。
-  const futureDate = (date, days, workday) => {
-    let d = date > today() ? date : addDays(today(), days);
-    if (workday == null) return d;
-    for (;;) {
-      const o = officialMap[d], f = festivalOf(d);
-      const work = OFFICIAL[+d.slice(0, 4)] ? (o ? o === 'work' : dow(d) < 5) : dow(d) < 5 && !(f && f.st);
-      if (work === workday) return d;
-      d = addDays(d, 1);
+  ],
+  "todos": [
+    {
+      "id": "mvyhslc0ywczw",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "梳理实习项目需求，列出本周交付清单",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "需求清单",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-02",
+            "s": 0
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc02h6u7",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "完成作品集首页第一版",
+      "est": 1,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "作品集首页",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": {
+        "dn": 0.5,
+        "slots": [
+          {
+            "d": "2026-11-02",
+            "s": 1
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc06pjpf",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "根据导师反馈修改作品集",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "反馈修改",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-02",
+            "s": 2
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0giia9",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "整理项目演示稿，录一段成果讲解",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "项目演示",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-02",
+            "s": 3
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0rqfgr",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "收集想投递的岗位和作品集参考",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "岗位参考",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0d5apt",
+      "groupId": "mvyhslc01nkhv",
+      "title": "和导师确认项目进度与交付时间",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "导师沟通",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": {
+          "k": "eq",
+          "d": "2026-11-03",
+          "p": 0
+        },
+        "e": null
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-03",
+            "s": 0
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0tt0ob",
+      "groupId": "mvyhslc01nkhv",
+      "title": "整理面试复盘和下周投递计划",
+      "est": 0.5,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "投递计划",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0sw4j1",
+      "groupId": "mvyhslc01nkhv",
+      "title": "更新简历中的项目经历",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "简历更新",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc01ih3n",
+      "groupId": "mvyhslc01nkhv",
+      "title": "整理一次模拟面试的反馈",
+      "est": 0.5,
+      "sched": false,
+      "done": true,
+      "archived": false,
+      "rest": false,
+      "short": "面试反馈",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0d7sm0",
+      "groupId": "mvyhslc0z2f10",
+      "title": "学完 Python 数据分析章节并完成练习",
+      "est": 2,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "数据分析",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": null,
+        "e": {
+          "k": "le",
+          "d": "2026-12-07",
+          "p": 2
+        }
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-07",
+            "s": 0
+          },
+          {
+            "d": "2026-11-07",
+            "s": 1
+          },
+          {
+            "d": "2026-11-07",
+            "s": 2
+          },
+          {
+            "d": "2026-11-07",
+            "s": 3
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0fzo9p",
+      "groupId": "mvyhslc0z2f10",
+      "title": "整理 Python 练习中卡住的报错",
+      "est": 0.5,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "报错笔记",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0jp90u",
+      "groupId": "mvyhslc0z2f10",
+      "title": "挑一门想系统学的设计或编程课程",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "课程选择",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0caic5",
+      "groupId": "mvyhslc0z2f10",
+      "title": "整理学习路线，下载课程资料",
+      "est": 0.5,
+      "sched": false,
+      "done": true,
+      "archived": true,
+      "rest": false,
+      "short": "学习路线",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": null,
+      "ao": 1
+    },
+    {
+      "id": "mvyhslc00srpm",
+      "groupId": "mvyhslc0o5bus",
+      "title": "读完一篇行业长文，记下三个观点",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "行业阅读",
+      "nb": null,
+      "st": {
+        "d": "2026-10-31",
+        "s": 0
+      },
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-10-31",
+            "s": 0
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0or7ra",
+      "groupId": "mvyhslc0o5bus",
+      "title": "把一个项目思路写成 200 字介绍",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "项目表达",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-10-31",
+            "s": 3
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0ax3vl",
+      "groupId": "mvyhslc0o5bus",
+      "title": "收藏想读的书和播客选题",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "阅读清单",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc03tcyy",
+      "groupId": "mvyhslc0xvji5",
+      "title": "整理桌面和电脑文件，清理下载文件夹",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "桌面整理",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-10-31",
+            "s": 2
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0mqmhs",
+      "groupId": "mvyhslc0xvji5",
+      "title": "补齐租房常用的清洁和洗护用品",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "日用补货",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0yfi1v",
+      "groupId": "mvyhslc0xvji5",
+      "title": "核对房租、订阅和本月预算",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "账单预算",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc02rpn7",
+      "groupId": "mvyhslc0xvji5",
+      "title": "洗好运动衣，收好换季外套",
+      "est": 0.5,
+      "sched": false,
+      "done": true,
+      "archived": false,
+      "rest": false,
+      "short": "衣物收纳",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0h1rwp",
+      "groupId": "mvyhslc00mzx3",
+      "title": "慢跑 3 公里，做一组拉伸",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "慢跑拉伸",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-10-31",
+            "s": 1
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0rzkai",
+      "groupId": "mvyhslc00mzx3",
+      "title": "去健身房完成一组力量训练",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "力量训练",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-10-31",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0vm5sk",
+      "groupId": "mvyhslc0z2f10",
+      "title": "参加一场线上职业分享会",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "职业分享",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": {
+          "k": "eq",
+          "d": "2026-11-03",
+          "p": 2
+        },
+        "e": null
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-03",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc01nck6",
+      "groupId": "mvyhslc0ttozh",
+      "title": "收藏想去的音乐现场和城市活动",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "活动收藏",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0nb05u",
+      "groupId": "mvyhslc0ttozh",
+      "title": "和朋友确认看展时间与集合地点",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "看展约定",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc048djv",
+      "groupId": "mvyhslc0ttozh",
+      "title": "整理上次活动的照片和报名凭证",
+      "est": 0.5,
+      "sched": false,
+      "done": true,
+      "archived": true,
+      "rest": false,
+      "short": "活动归档",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": null,
+      "ao": 2
+    },
+    {
+      "id": "mvyhslc0r02v0",
+      "groupId": "mvyhslc01nkhv",
+      "title": "参加项目阶段复盘，整理待跟进事项",
+      "est": 0.5,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "项目复盘",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": {
+          "k": "eq",
+          "d": "2026-11-23",
+          "p": 0
+        },
+        "e": null
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0tfvpg",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "完成求职作品集的项目说明",
+      "est": 1.5,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "项目说明",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": null,
+        "e": {
+          "k": "eq",
+          "d": "2026-11-30",
+          "p": 1
+        }
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0fwg31",
+      "groupId": "mvyhslc0o5bus",
+      "title": "完成英语面试模拟练习",
+      "est": 1.5,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "口语模拟",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": {
+          "k": "ge",
+          "d": "2026-11-28",
+          "p": 0
+        },
+        "e": {
+          "k": "le",
+          "d": "2026-12-12",
+          "p": 1
+        }
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0zcdnc",
+      "groupId": "mvyhslc0ttozh",
+      "title": "准备线下活动的报名材料",
+      "est": 0.5,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "活动报名",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": {
+          "k": "ge",
+          "d": "2026-11-29",
+          "p": 2
+        },
+        "e": {
+          "k": "le",
+          "d": "2026-12-02",
+          "p": 2
+        }
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0i56ll",
+      "groupId": "mvyhslc0ttozh",
+      "title": "休息",
+      "est": 1,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": true,
+      "short": "",
+      "nb": null,
+      "st": null,
+      "rq": {
+        "s": {
+          "k": "eq",
+          "d": "2026-12-05",
+          "p": 0
+        },
+        "e": null
+      },
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0v0jje",
+      "groupId": "mvyhslc0ixbpz",
+      "title": "整理下一阶段想做的个人项目",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "项目想法",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0vu0s4",
+      "groupId": "mvyhslc0o5bus",
+      "title": "整理能用于面试的项目故事",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "项目故事",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0hlfqy",
+      "groupId": "mvyhslc0xvji5",
+      "title": "整理毕业或入职前要办理的手续",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "手续清单",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0dn1nk",
+      "groupId": "mvyhslc0z2f10",
+      "title": "完成一套 SQL 基础练习",
+      "est": 0.5,
+      "sched": false,
+      "done": true,
+      "archived": true,
+      "rest": false,
+      "short": "SQL练习",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": null,
+      "ao": 3
+    },
+    {
+      "id": "mvyhslc0gfdlp",
+      "groupId": "mvyhslc0z2f10",
+      "title": "整理常用函数和查询语句速查表",
+      "est": 0.5,
+      "sched": false,
+      "done": true,
+      "archived": true,
+      "rest": false,
+      "short": "查询速查",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0.5,
+      "wv": null,
+      "plan": null,
+      "ao": 4
+    },
+    {
+      "id": "mvyhslc0sknve",
+      "groupId": "mvyhslc0xvji5",
+      "title": "列好下周饭单，采购便当食材",
+      "est": 1,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "便当采购",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-01",
+            "s": 0
+          },
+          {
+            "d": "2026-11-01",
+            "s": 1
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0ld3e8",
+      "groupId": "mvyhslc01nkhv",
+      "title": "约同学互看简历，整理修改建议",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "简历互评",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0mysyd",
+      "groupId": "mvyhslc0o5bus",
+      "title": "记下值得继续研究的产品设计问题",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "设计问题",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0rrmts",
+      "groupId": "mvyhslc0ttozh",
+      "title": "查好下次出差的交通和住宿",
+      "est": null,
+      "sched": false,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "出行准备",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": null,
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0e49e5",
+      "groupId": "mvyhslc0z2f10",
+      "title": "练习 Figma 页面布局，做一版交互稿",
+      "est": 2,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "交互练习",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-07",
+            "s": 4
+          },
+          {
+            "d": "2026-11-08",
+            "s": 0
+          },
+          {
+            "d": "2026-11-08",
+            "s": 1
+          },
+          {
+            "d": "2026-11-08",
+            "s": 2
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0brw37",
+      "groupId": "mvyhslc0z2f10",
+      "title": "整理作品集的截图、素材和文件备份",
+      "est": 1,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "素材归档",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-05",
+            "s": 4
+          },
+          {
+            "d": "2026-11-06",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc03mjg9",
+      "groupId": "mvyhslc0z2f10",
+      "title": "完成一套面试练习题，整理答题思路",
+      "est": 2,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "面试练习",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-08",
+            "s": 3
+          },
+          {
+            "d": "2026-11-08",
+            "s": 4
+          },
+          {
+            "d": "2026-11-09",
+            "s": 4
+          },
+          {
+            "d": "2026-11-10",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0rjkzj",
+      "groupId": "mvyhslc0o5bus",
+      "title": "剪一支作品展示视频，补齐字幕和封面",
+      "est": 1.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "视频剪辑",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-11",
+            "s": 4
+          },
+          {
+            "d": "2026-11-12",
+            "s": 4
+          },
+          {
+            "d": "2026-11-13",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0uf2ti",
+      "groupId": "mvyhslc0z2f10",
+      "title": "整理最近的练习笔记，把易错点单独标出来",
+      "est": 1.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "易错整理",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-14",
+            "s": 0
+          },
+          {
+            "d": "2026-11-14",
+            "s": 1
+          },
+          {
+            "d": "2026-11-14",
+            "s": 2
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0qcoon",
+      "groupId": "mvyhslc0xvji5",
+      "title": "周末做两份便当，试一道新菜",
+      "est": 1,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "便当试做",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-14",
+            "s": 3
+          },
+          {
+            "d": "2026-11-14",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0lsc3h",
+      "groupId": "mvyhslc0o5bus",
+      "title": "写一篇读书分享，补齐案例和配图",
+      "est": 2,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "读书分享",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-15",
+            "s": 0
+          },
+          {
+            "d": "2026-11-15",
+            "s": 1
+          },
+          {
+            "d": "2026-11-15",
+            "s": 2
+          },
+          {
+            "d": "2026-11-15",
+            "s": 3
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0xeetr",
+      "groupId": "mvyhslc00mzx3",
+      "title": "和朋友打一次羽毛球，练习发球和双打",
+      "est": 1,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "羽毛球",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-01",
+            "s": 2
+          },
+          {
+            "d": "2026-11-01",
+            "s": 3
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc07ur85",
+      "groupId": "mvyhslc0o5bus",
+      "title": "整理一页英语口语表达清单",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "口语清单",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-15",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc0vhnja",
+      "groupId": "mvyhslc0xvji5",
+      "title": "整理租房空间，归置衣物和常用物品",
+      "est": 1,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "房间整理",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-01",
+            "s": 4
+          },
+          {
+            "d": "2026-11-02",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
+    },
+    {
+      "id": "mvyhslc018cw7",
+      "groupId": "mvyhslc0o5bus",
+      "title": "整理面试自我介绍，练习一遍开场",
+      "est": 0.5,
+      "sched": true,
+      "done": false,
+      "archived": false,
+      "rest": false,
+      "short": "自我介绍",
+      "nb": null,
+      "st": null,
+      "rq": null,
+      "dn": 0,
+      "wv": null,
+      "plan": {
+        "dn": 0,
+        "slots": [
+          {
+            "d": "2026-11-04",
+            "s": 4
+          }
+        ]
+      },
+      "ao": null
     }
-  };
-  const reviewDate = futureDate('2026-11-13', 21, true);
-  const proposalDate = futureDate('2026-11-20', 28, true);
-  const studyDate = futureDate('2026-11-14', 21, false);
-  const outingDate = futureDate('2026-11-19', 28, null);
-  const restBase = futureDate('2026-11-21', 28, false);
-  const restDate = restBase === nextDay(1, false) ? futureDate(addDays(restBase, 7), 28, false) : restBase;
-  const todos = [
-    // 工作：把当前项目拆成可执行的步骤，待确认的想法先留在清单里。
-    t(gs.wP.id, '整理需求清单，确认本次迭代范围', 0.5, true, { short: '需求梳理' }),
-    t(gs.wP.id, '完成核心页面初稿', 1, true, { short: '页面初稿', dn: 0.5 }),
-    t(gs.wP.id, '根据评审意见调整方案', 0.5, true),
-    t(gs.wP.id, '汇总验收要点，准备演示', 0.5, true, { short: '验收准备' }),
-    t(gs.wP.id, '收集下一版改进想法'),
-    t(gs.wD.id, '沟通项目进展与待确认事项', 0.5, true, { short: '进度沟通', rq: { s: { k: 'eq', d: nextDay(1, true), p: 0 }, e: null } }),
-    t(gs.wD.id, '整理本周进展与下周重点', 0.5, false, { short: '本周复盘' }),
-    t(gs.wD.id, '提交本月报销'),
-    t(gs.wD.id, '同步本次会议纪要', 0.5, false, { done: true, dn: 0.5 }),
-    // 自习：把近期已确定的学习、阅读安排衔接起来，其余先留在清单。
-    t(gs.sC.id, '学完当前章节并完成课后练习', 1.5, true, { short: '章节练习', rq: { s: null, e: { k: 'le', d: addDays(today(), 35), p: 2 } } }),
-    t(gs.sC.id, '整理这一章的错题与疑问', 0.5),
-    t(gs.sC.id, '选一门想学的课程'),
-    t(gs.sC.id, '整理课程资料与学习目录', 0.5, false, { done: true, archived: true, dn: 0.5, ao: 1 }),
-    t(gs.sR.id, '读完当前一章，记下 3 个要点', 0.5, true, { short: '章节阅读' }),
-    t(gs.sR.id, '把一条读书笔记整理成卡片', 0.5, true, { short: '笔记卡片' }),
-    t(gs.sR.id, '收集感兴趣的书和文章'),
-    // 生活：零散事项不必估时排期，也给运动、休息和出行留出位置。
-    t(gs.lD.id, '整理书桌与文件', 0.5, true, { short: '整理书桌' }),
-    t(gs.lD.id, '补齐本周日用品'),
-    t(gs.lD.id, '核对本月固定支出'),
-    t(gs.lD.id, '洗好并收纳换季衣物', 0.5, false, { done: true, dn: 0.5 }),
-    t(gs.lH.id, '跑步 5 公里，结束后拉伸', 0.5, true, { short: '跑步拉伸' }),
-    t(gs.lH.id, '安排一次力量训练', 0.5, true),
-    t(gs.lT.id, '休息', 0.5, true, { rest: true, rq: { s: { k: 'eq', d: addDays(today(), 1), p: 2 }, e: null } }),
-    t(gs.lT.id, '列出下次出行想去的地方'),
-    t(gs.lT.id, '确认与朋友出游的集合地点'),
-    t(gs.lT.id, '整理上次出行照片', 0.5, false, { done: true, archived: true, dn: 0.5, ao: 2 }),
-    // 远期事项保留固定日期和时间窗口，临近时再参与排期。
-    t(gs.wD.id, '11 月阶段进展沟通', 0.5, false, { short: '阶段沟通', rq: { s: { k: 'eq', d: reviewDate, p: 0 }, e: null } }),
-    t(gs.wP.id, '整理下一阶段的方案与材料', 1.5, false, { short: '阶段方案', rq: { s: null, e: { k: 'eq', d: proposalDate, p: 1 } } }),
-    t(gs.sC.id, '完成专题练习并整理笔记', 1.5, false, { short: '专题练习', rq: { s: { k: 'ge', d: studyDate, p: 0 }, e: { k: 'le', d: addDays(studyDate, 14), p: 1 } } }),
-    t(gs.lT.id, '准备 11 月出行物品', 0.5, false, { short: '出行准备', rq: { s: { k: 'ge', d: outingDate, p: 2 }, e: { k: 'le', d: addDays(outingDate, 3), p: 2 } } }),
-    t(gs.lT.id, '休息', 1, false, { rest: true, rq: { s: { k: 'eq', d: restDate, p: 0 }, e: null } }),
-    t(gs.wP.id, '记录下一阶段想尝试的改进'),
-    t(gs.sR.id, '整理值得回看的读书笔记'),
-    t(gs.lD.id, '列好年底前想完成的小事'),
-    t(gs.sC.id, '整理上一个专题的复习清单', 0.5, false, { done: true, archived: true, dn: 0.5, ao: 3 }),
-    t(gs.sC.id, '归纳上一章的练习要点', 0.5, false, { done: true, archived: true, dn: 0.5, ao: 4 }),
-    t(gs.lD.id, '准备一周晚餐食材', 0.5, true, { short: '准备食材' }),
-    t(gs.wD.id, '确认下周需要协作的事项'),
-    t(gs.sR.id, '记下一个值得继续了解的问题'),
-    t(gs.lT.id, '挑一个天气合适的近郊路线')
-  ];
-  // 近期安排顺着可用时段衔接，远期只保留日期要求，避免铺出长串空档。
-  const first = ['读完当前一章，记下 3 个要点', '跑步 5 公里，结束后拉伸', '学完当前章节并完成课后练习', '整理书桌与文件', '把一条读书笔记整理成卡片', '安排一次力量训练', '准备一周晚餐食材'];
-  const priority = first.map(title => todos.find(t => t.title === title).id);
-  const order = [...todos.filter(t => gs.wP.id === t.groupId || gs.wD.id === t.groupId).map(t => t.id), ...priority];
-  for (const t of todos) if (!order.includes(t.id)) order.push(t.id);
-  return { groups: Object.values(gs), todos, schedOrder: order, dayOverrides: {}, view: 'group', calMonth: monthStr(today()), lastGroup: gs.wP.id, archOpen: false, collapsed: {} };
+  ],
+  "schedOrder": [
+    "mvyhslc0ywczw",
+    "mvyhslc02h6u7",
+    "mvyhslc06pjpf",
+    "mvyhslc0giia9",
+    "mvyhslc0rqfgr",
+    "mvyhslc0d5apt",
+    "mvyhslc0tt0ob",
+    "mvyhslc0sw4j1",
+    "mvyhslc01ih3n",
+    "mvyhslc0r02v0",
+    "mvyhslc0tfvpg",
+    "mvyhslc0v0jje",
+    "mvyhslc0ld3e8",
+    "mvyhslc00srpm",
+    "mvyhslc0h1rwp",
+    "mvyhslc03tcyy",
+    "mvyhslc0or7ra",
+    "mvyhslc0rzkai",
+    "mvyhslc0sknve",
+    "mvyhslc0xeetr",
+    "mvyhslc0vhnja",
+    "mvyhslc018cw7",
+    "mvyhslc0brw37",
+    "mvyhslc0d7sm0",
+    "mvyhslc0e49e5",
+    "mvyhslc03mjg9",
+    "mvyhslc0rjkzj",
+    "mvyhslc0uf2ti",
+    "mvyhslc0qcoon",
+    "mvyhslc0lsc3h",
+    "mvyhslc07ur85",
+    "mvyhslc0fzo9p",
+    "mvyhslc0jp90u",
+    "mvyhslc0caic5",
+    "mvyhslc0ax3vl",
+    "mvyhslc0mqmhs",
+    "mvyhslc0yfi1v",
+    "mvyhslc02rpn7",
+    "mvyhslc0vm5sk",
+    "mvyhslc01nck6",
+    "mvyhslc0nb05u",
+    "mvyhslc048djv",
+    "mvyhslc0fwg31",
+    "mvyhslc0zcdnc",
+    "mvyhslc0i56ll",
+    "mvyhslc0vu0s4",
+    "mvyhslc0hlfqy",
+    "mvyhslc0dn1nk",
+    "mvyhslc0gfdlp",
+    "mvyhslc0mysyd",
+    "mvyhslc0rrmts"
+  ],
+  "dayOverrides": {},
+  "view": "group",
+  "calMonth": "2026-10",
+  "lastGroup": "mvyhslc0ixbpz",
+  "archOpen": false,
+  "collapsed": {},
+  "tick": {
+    "d": "2026-10-31",
+    "s": 0
+  },
+  "archFold": {}
+};
 }
 
 const todoById = id => state.todos.find(t => t.id === id);
