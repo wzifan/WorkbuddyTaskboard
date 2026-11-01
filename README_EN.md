@@ -1,31 +1,34 @@
 # WorkBuddy Taskboard
 
-#### Overview and Approach
+#### Concept and Highlights
 
-WorkBuddy Taskboard is a web app that connects your task list with a calendar. It is designed for people managing work, study, and everyday commitments. Project tasks, courses, and planned activities each have their own details and timing requirements. The list holds what needs to be done, the calendar shows when it is scheduled, and each task retains the time already counted toward completion.
-
-Loose ideas and tasks without a set date can stay in the list. Tasks coming up soon can be scheduled based on their estimated duration. Tasks with firm commitments can have date constraints, while longer-term items can be recorded now and scheduled closer to the date. Changes in the list and calendar stay in sync. As scheduled time passes, it is counted toward completion; if more time is needed, the estimate can be increased without losing the progress already recorded.
-
-The app can be used to move projects forward, plan study sessions, or keep track of everyday errands and outings. It runs in a browser on both phones and computers. The cloud version synchronizes tasks, schedules, and progress so you can continue on another device. Open the app to explore the features with the sample tasks, or begin with your own first task.
+- Tasks fall into three categories: Work, Study, and Life.
+- The grouped task list is for everyday task capture.
+- Every task supports fixed, earliest, or latest start and end times.
+- Schedule near-term or predictable tasks, or temporarily schedule tasks to estimate when they will be finished.
+- Each task's schedule is continuous and cannot be split. Work and non-work time are scheduled independently.
+- Time is measured in half-day units. Each task tracks completed time and total estimated time.
+- A scheduled task is complete when its completed time equals its total estimate, and incomplete when its completed time is less than its total estimate.
+- For a task currently on the schedule, completed time increases automatically as scheduled time passes. Once it reaches the estimate, the task is marked complete. If the work is not actually finished, increase the total estimate or reduce the completed time in the task's properties. Completed time cannot be edited for scheduled tasks with a fixed start time.
+- Press and hold tasks in the calendar or task list to drag them.
 
 #### Features
 
-1. **Categories and groups**: Organize tasks into Work, Study, and Life categories, with groups for related items. Press and hold a task to change its position within a group.
-2. **Quick capture**: New tasks stay in the list by default, with no need to enter a duration or choose a date right away.
-3. **Optional scheduling**: Set an estimated duration and enable scheduling for tasks that need a place on the calendar. Work and non-work time slots are scheduled separately.
-4. **Calendar dragging with a live list preview**: Drag calendar blocks to adjust the schedule. Irregularly shaped blocks spanning multiple slots, such as a task estimated at 1.5 half-day units, can be moved as a whole. The list previews the updated order and times during the drag, and both views update when the block is dropped.
-5. **List reordering with calendar updates**: Move tasks up or down in the schedule view to change their order. The corresponding calendar blocks move with them.
-6. **Navigation between views**: Click a calendar block to locate its task in the list. Click a task's time information to find it on the calendar.
-7. **Calendar short names**: Keep a task's full title in the list and give it a separate short name for easier recognition in small calendar cells.
-8. **Fixed start or end times**: Set a fixed start or end date and time slot to preserve an arrangement that has already been agreed upon.
-9. **Time constraints and conflict messages**: Set constraints such as "no earlier than" and "no later than." If requirements conflict or a task cannot fit into the schedule, the app explains why.
-10. **Future tasks**: Record future commitments or deadlines now and schedule them closer to the date, keeping distant plans from filling the calendar.
-11. **Gaps and breaks**: Time constraints may leave gaps between scheduled tasks. These gaps can also be turned into break tasks.
-12. **Automatic completion and extended estimates**: As scheduled time passes, the app accumulates time credited toward completion and marks the task complete once its scheduled time has elapsed. If the work is not actually finished, increasing the total estimate reopens the task while retaining the time already credited.
-13. **Working days and days off**: Click a date number on the calendar to switch that day between a working day and a day off. Related schedules adjust accordingly.
-14. **Archive and restore**: Archive completed tasks while keeping their records. Restore them to the list whenever needed.
-15. **Mobile access**: View the calendar, organize tasks, adjust estimates, and set time constraints on a phone.
-16. **Cloud synchronization**: Continue viewing and editing across devices. Cloud updates are coordinated with ongoing edits and drag operations; saved changes are checked, and sync errors are reported.
+1. **Quick capture:** New regular tasks are not scheduled by default. No duration or date is required.
+2. **Optional scheduling:** Choose whether each task participates in scheduling.
+3. **Calendar dragging:** Move a task's calendar block as a whole. The task list updates its order and times accordingly.
+4. **List and calendar updates:** Move tasks up or down in the schedule view to adjust their calendar positions.
+5. **Navigation between views:** Click a calendar task block to locate its entry in the list. Click the task's time in the list to locate its calendar block.
+6. **Calendar short names:** Give tasks a separate short name for display on the calendar.
+7. **Fixed times:** Fix a task's start or end time. Fixed schedules cannot be changed by dragging or moving tasks up or down.
+8. **Time constraints:** Both start and end times support "no earlier than" and "no later than." If a task cannot fit, the app explains why.
+9. **Gaps and breaks:** Fixed time requirements may create gap entries ("空"). These can be converted into break tasks.
+10. **Automatic completion:** See [**Concept and Highlights**](#concept-and-highlights).
+11. **Working days and days off:** Click a date number to switch between a working day and a day off. You can also restore the official calendar.
+12. **Archive and restore:** Archive completed tasks to keep their records, and restore them when needed.
+13. **Mobile use:** The interface has been extensively optimized for phones.
+14. **Cloud synchronization:** Automatically sync with the WorkBuddy Library and access the taskboard from multiple devices at the same time. **This took the most development time and has been extensively refined.**
+15. **More details are to discover!**
 
 #### Getting Started
 
@@ -35,7 +38,7 @@ The app can be used to move projects forward, plan study sessions, or keep track
 git clone https://github.com/wzifan/WorkbuddyTaskboard.git
 ```
 
-###### 2. Sync the local files to the WorkBuddy Library for cloud synchronization and access across devices
+###### 2. Deploy the local files to the WorkBuddy Library for cloud synchronization and access across devices
 
 In WorkBuddy, set the working directory to `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}` and select the `工作台搭建师` (Workbench Builder) expert. Use the prompt provided in `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}/加载到云端的提示词.txt`.
 
