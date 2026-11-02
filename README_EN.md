@@ -7,7 +7,7 @@
 - Every task supports fixed, earliest, or latest start and end times.
 - Schedule near-term or predictable tasks, or temporarily schedule tasks to estimate when they will be finished.
 - Each task's schedule is continuous and cannot be split. Work and non-work time are scheduled independently.
-- Time is measured in 0.5half-day units. Each task tracks completed time and total estimated time.
+- Time is measured in 0.5 half-day units. Each task tracks completed time and total estimated time.
 - A scheduled task is complete when its completed time equals its total estimate, and incomplete when its completed time is less than its total estimate.
 - For a task currently on the schedule, completed time increases automatically as scheduled time passes. Once it reaches the estimate, the task is marked complete. If the work is not actually finished, increase the total estimate or reduce the completed time in the task's properties. Completed time cannot be edited for scheduled tasks with a fixed start time.
 - Press and hold tasks in the calendar or task list to drag them.
