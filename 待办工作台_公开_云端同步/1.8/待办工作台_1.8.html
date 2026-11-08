@@ -39,7 +39,30 @@ svg{display:inline-block;vertical-align:middle}
 .stats b{color:var(--text);font-weight:600}
 
 /* ---------- layout ---------- */
-.layout{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(540px,.9fr);gap:16px;padding:16px 20px;height:calc(100vh - 52px)}
+.layout{
+  --calendar-min:480px;--list-min:540px;--divider-width:16px;
+  --panes-width:calc(100% - var(--divider-width));
+  display:grid;
+  grid-template-columns:
+    clamp(var(--calendar-min),calc(var(--panes-width) * var(--calendar-share,.59090909)),calc(var(--panes-width) - var(--list-min)))
+    var(--divider-width) minmax(var(--list-min),1fr);
+  padding:16px 20px;height:calc(100vh - 52px)
+}
+.panel-resize{position:relative;min-height:0;cursor:col-resize;touch-action:none;user-select:none;outline:none}
+.panel-resize::before{
+  content:"";position:absolute;top:10px;bottom:10px;left:50%;width:1px;
+  transform:translateX(-50%);border-radius:999px;background:#dce2eb
+}
+.panel-resize::after{
+  --dot:radial-gradient(circle,currentColor 1px,transparent 1.3px);
+  content:"";position:absolute;top:50%;left:50%;width:8px;height:30px;transform:translate(-50%,-50%);
+  border:1px solid #d5dde9;border-radius:999px;color:#929fb3;
+  background:var(--dot) center calc(50% - 5px)/3px 3px no-repeat,var(--dot) center/3px 3px no-repeat,var(--dot) center calc(50% + 5px)/3px 3px no-repeat,var(--card)
+}
+.panel-resize:is(:hover,:focus-visible,.is-active)::before{width:2px;background:#9db8ef}
+.panel-resize:is(:hover,:focus-visible,.is-active)::after{border-color:#b8cdf7;color:var(--accent);background-color:var(--accent-bg)}
+.panel-resize:focus-visible::after{outline:2px solid var(--accent);outline-offset:1px}
+body.resizing-panels,body.resizing-panels *{cursor:col-resize!important;user-select:none!important;-webkit-user-select:none!important}
 .panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;min-width:0}
 .panel-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;min-height:52px}
 .panel-body{flex:1;min-height:0;overflow:auto;padding:12px 16px 16px;-webkit-overflow-scrolling:touch}
@@ -416,8 +439,13 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
   .cal-hint-part{display:block;white-space:nowrap}
   .cal-hint-sep{display:none}
 }
+@media (width > 1260px){
+  #listPanel .meta :is(.tag,.when,.req){max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
+  #listPanel .meta :is(.tag i,.req svg){flex:none}
+}
 @media (max-width:1260px){
   .layout{display:block;height:auto;padding:10px}
+  .panel-resize{display:none}
   .panel{margin-bottom:12px}
   .panel-body{overflow:visible;padding:10px}
   .panel-head{position:sticky;top:48px;z-index:10;background:#fff;border-radius:var(--radius) var(--radius) 0 0}
@@ -525,6 +553,8 @@ body.dragging,body.dragging *{user-select:none!important;-webkit-user-select:non
       <p class="cal-hint" data-page-node-id="buc44tKD1iKcd1uBWBaAuo">此处可让workbuddy改为您的座右铭。</p>
     </div>
   </section>
+
+  <div class="panel-resize" id="panelResize" role="separator" tabindex="0" aria-orientation="vertical" aria-controls="calPanel" aria-label="调整日历宽度" title="左右拖动调整宽度"></div>
 
   <section class="panel" id="listPanel" data-page-node-id="C2lJJhLG7UMjHp3mot5H7m">
     <div class="panel-head" data-page-node-id="ZWiyPM3vx6HRZh1srgO4Dh">
@@ -736,27 +766,27 @@ function commit() {
 }
 
 /* ================= cloud sync（资料库数据表双向同步） =================
-   本地主动改动才进入改动状态。每 0.5 秒把云端读到本地不算改动，这段时间的读取会停掉。
-   安静 0.25 秒没有新的主动改动，就把当时的本地状态上传。写入后再读云端，本地可见内容和云端可见内容两边都完全一致，才算上传完成，然后退出改动状态。
-   还不一致：每 0.5 秒再比一次，这一轮最多等 2 秒，仍不一致就重新上传当前状态再比。累计超过 10 秒仍不一致，提示网络异常，并用这次读到的云端覆盖本地，退出改动状态。
-   上传或比对期间又有主动改动：退出上传，回到 0.25 秒安静等待。
-   非改动状态每 0.5 秒读一次云端。 */
-let cloudMirror = new Map(), cloudReady = false, lastLocalEditAt = 0;
-let syncPhase = 'idle', quietTimer = 0, confirmTimer = 0, uploadBusy = false, confirmBusy = false, cloudPulling = false;
-let confirmOrigin = 0, confirmWait = 0;
+   只有主动改动启动上传。读入云端、自动结算和重绘只更新本地。
+   安静 0.25 秒后上传当前快照，回读核对这一批记录，包括新增和删除。
+   不一致时每 0.5 秒复查，2 秒后重传，累计 10 秒仍不一致则提示并采用读到的云端数据。
+   新的主动改动使旧批次失效。空闲时每 0.5 秒读取。 */
+const WRITE_GAP_MS = 80;   // 增删会连带更新多行顺序，串行请求也要给资料库留出限流余量
+let cloudMirror = new Map(), cloudReady = false, editVersion = 0;
+let syncPhase = 'idle', quietTimer = 0, confirmTimer = 0, pullTimer = 0;
+let uploadBusy = false, cloudPulling = false, lastWriteAt = -Infinity, confirmOrigin = 0;
 
 function inChangeState() { return syncPhase !== 'idle'; }
-function beginQuiet(fromEdit) {
+function beginQuiet() {
   syncPhase = 'quiet';
   clearTimeout(confirmTimer); confirmTimer = 0;
   clearTimeout(quietTimer);
-  if (fromEdit) { confirmOrigin = 0; confirmWait = 0; }
+  confirmOrigin = 0;
   quietTimer = setTimeout(() => { quietTimer = 0; uploadNow(); }, 250);
 }
 function markLocalEdit() {
-  lastLocalEditAt = Date.now();
-  if (!cloudReady) return;
-  beginQuiet(true);
+  if (!db) return;
+  editVersion++;
+  if (cloudReady) beginQuiet();
 }
 function flushCloudSync() {   // 关闭 / 切走时，正在安静等待的改动立刻按当前状态上传
   if (!db || !cloudReady || syncPhase !== 'quiet') return;
@@ -789,13 +819,15 @@ function toProps(rec) {
   } else if (f['类型'] === '设置') { p['设置值'] = { text: f['设置值'] }; }
   return p;
 }
-function cloudQueryAll(startCursor, acc) {
-  acc = acc || [];
-  return db.query({ databaseId: DATABASE_ID, pageSize: 200, startCursor: startCursor }).then(function (r) {
-    acc = acc.concat(r.results || []);
-    var next = r.nextCursor;
-    if (r.hasMore && next && next !== startCursor && (r.results || []).length) return cloudQueryAll(next, acc);
-    return acc;
+function cloudQueryAll(startCursor, acc = [], cursors = new Set()) {
+  return db.query({ databaseId: DATABASE_ID, pageSize: 200, startCursor }).then(r => {
+    if (!r || !Array.isArray(r.results)) throw new Error('资料库返回的记录无效');
+    acc.push(...r.results);
+    if (!r.hasMore) return acc;
+    const next = r.nextCursor;
+    if (!next || cursors.has(next) || !r.results.length) throw new Error('资料库分页未读取完整');
+    cursors.add(next);
+    return cloudQueryAll(next, acc, cursors);
   });
 }
 function stateFromRows(rows) {
@@ -829,35 +861,51 @@ function stateFromRows(rows) {
   for (const k in st.collapsed) if (!st.groups.some(g => g.id === k)) delete st.collapsed[k];
   return st;
 }
-/* 云端行 → 与 stateRecords 同形的签名：镜像记下的是云端「实际存着的内容」，
-   这样载入时做过的迁移（旧「其他」类型、补 0.5 预估等）和云端还没有的设置行（如时间水位 tick）都会被推上去 */
+/* 读、写都按资料库的字段值比较。排期结算后的本地显示不参与云端快照比较。 */
 const REC_FIELDS = ['标题', '类型', '分类', '分组', '预估', '排期', '完成', '归档', '休息', '排序', '排期序', '分组ID', '设置值'];
+function fieldValue(key, value) {
+  if (key === '预估') return value == null ? null : value;
+  if (['排期', '完成', '归档', '休息'].includes(key)) return !!value;
+  if (key === '排序' || key === '排期序') return value == null ? -1 : value;
+  return value == null ? '' : value;
+}
 function rowSig(r) {
-  const f = {};
-  for (const k of REC_FIELDS) { const v = r[k]; f[k] = k === '预估' ? (v == null ? null : v) : ['排期', '完成', '归档', '休息'].includes(k) ? !!v : (k === '排序' || k === '排期序') ? (v == null ? -1 : v) : (v == null ? '' : v); }
-  return recSig(f);
+  return recSig(Object.fromEntries(REC_FIELDS.map(key => [key, fieldValue(key, r[key])])));
 }
-/* 按云端现有的行建镜像（只含本地用得到的记录；页面用不到的云端行，如分组已不存在的待办，不纳入、保持不动）；返回是否有需要回推的差异 */
-function mirrorFromRows(rows) {
-  const rowByKey = new Map();
-  for (const r of rows) { const k = r['记录ID']; if (k && !rowByKey.has(k)) rowByKey.set(k, r); }
-  const recs = stateRecords(), keys = new Set(recs.map(rec => rec.key));
-  cloudMirror.clear();
-  for (const [k, r] of rowByKey) if (keys.has(k)) cloudMirror.set(k, { rid: r._id || null, sig: rowSig(r) });
-  return recs.some(rec => { const m = cloudMirror.get(rec.key); return !m || m.sig !== recSig(rec.fields); });
+/* 从云端自身的可见记录建快照，因此新增和删除都能检出。孤立行不参与同步。 */
+function mirrorFromRows(rows, visible = stateFromRows(rows)) {
+  const keys = new Set(recordsOf(visible).map(rec => rec.key));
+  const mirror = new Map();
+  for (const row of rows) {
+    const key = row['记录ID'];
+    if (keys.has(key) && !mirror.has(key)) mirror.set(key, { rid: row._id || null, sig: rowSig(row) });
+  }
+  return mirror;
 }
-function adoptCloudRows(rows, pushBack) {
-  state = stateFromRows(rows);
+function sameMirror(a, b) {
+  if (a.size !== b.size) return false;
+  for (const [key, row] of a) {
+    const other = b.get(key);
+    if (!other || other.rid !== row.rid || other.sig !== row.sig) return false;
+  }
+  return true;
+}
+function adoptCloudState(next, mirror) {
+  state = next;
+  cloudMirror = mirror;
   state.dragId = null; state.addingGroup = null; state.addAt = null;
   save();
   try { localStorage.setItem(STORE_DB_KEY, DATABASE_ID); } catch (e) { }
-  const diff = mirrorFromRows(rows);
   dayCache.clear();
   render();
-  if (pushBack !== false && diff) markLocalEdit();   // 主动载入后的迁移、缺的设置行才回推；每 0.5 秒读云端不算改动
+  // 一批记录分次到达时，显示顺序可能已变，表里的序号还没写到。
+  for (const rec of stateRecords()) {
+    const row = mirror.get(rec.key);
+    if (row) row.displaySig = recSig(rec.fields);
+  }
 }
 function visibleFromWrite(res) {
-  if (!res || typeof res !== 'object') return null;
+  if (!res || typeof res !== 'object') return {};
   const src = res.properties && typeof res.properties === 'object' ? res.properties : res;
   const plain = v => {
     if (v == null || typeof v !== 'object') return v;
@@ -867,130 +915,165 @@ function visibleFromWrite(res) {
     if ('checkbox' in v) return v.checkbox;
     return null;
   };
-  if (!REC_FIELDS.some(k => Object.prototype.hasOwnProperty.call(src, k))) return null;
   const f = {};
-  for (const k of REC_FIELDS) {
-    const raw = plain(src[k]);
-    f[k] = k === '预估' ? (raw == null ? null : raw) : ['排期', '完成', '归档', '休息'].includes(k) ? !!raw : (k === '排序' || k === '排期序') ? (raw == null ? -1 : raw) : (raw == null ? '' : raw);
+  for (const key of REC_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(src, key)) f[key] = fieldValue(key, plain(src[key]));
   }
   return f;
 }
-function uploadCurrent() {
-  const recs = stateRecords(), seen = new Set(), jobs = [], writes = [];
-  for (const rec of recs) {
-    seen.add(rec.key);
-    const sig = recSig(rec.fields), m = cloudMirror.get(rec.key);
-    if (!m || !m.rid) jobs.push(() => db.addRecord({ databaseId: DATABASE_ID, properties: toProps(rec) }).then(function (res) { cloudMirror.set(rec.key, { rid: res && res.id ? res.id : null, sig }); writes.push({ sig, res }); }));
-    else if (m.sig !== sig) jobs.push(() => db.updateRecord({ databaseId: DATABASE_ID, recordId: m.rid, properties: toProps(rec) }).then(function (res) { cloudMirror.set(rec.key, { rid: m.rid, sig }); writes.push({ sig, res }); }));
+async function uploadCurrent(batch) {
+  const adds = [], removals = [], updates = [];
+  for (const rec of batch.records) {
+    const sig = recSig(rec.fields), row = cloudMirror.get(rec.key);
+    if (!row) adds.push({ kind: 'add', key: rec.key, rec, sig });
+    else if (row.sig !== sig || (row.displaySig && row.displaySig !== sig) || !row.rid) {
+      updates.push({ kind: 'update', key: rec.key, rid: row.rid, rec, sig });
+    }
   }
-  for (const [k, m] of cloudMirror) {
-    if (seen.has(k) || !m.rid) continue;
-    const mk = k, mm = m;
-    jobs.push(() => db.deleteRecord({ databaseId: DATABASE_ID, recordId: mm.rid }).then(function () { cloudMirror.delete(mk); }));
+  for (const [key, row] of cloudMirror) {
+    if (!batch.wanted.has(key)) removals.push({ kind: 'delete', key, rid: row.rid });
   }
-  let p = Promise.resolve();
-  for (const j of jobs) p = p.then(j);
-  return p.then(function () { return writes; });
+  // 增删先可见，受影响的排序与排期随后写入。新一轮改动到来时只等待已经发出的请求。
+  const jobs = [...adds, ...removals, ...updates];
+  batch.touched = jobs.map(job => job.key);
+  for (const job of jobs) {
+    if (batch.version !== editVersion) break;
+    if (job.kind !== 'add' && !job.rid) continue;   // 已提交新增但未拿到 ID 时，等回读确认，避免重复创建
+    const wait = WRITE_GAP_MS - (Date.now() - lastWriteAt);
+    if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+    if (batch.version !== editVersion) break;
+    lastWriteAt = Date.now();
+    if (job.kind === 'delete') {
+      await db.deleteRecord({ databaseId: DATABASE_ID, recordId: job.rid });
+      cloudMirror.delete(job.key);
+    } else {
+      const properties = toProps(job.rec);
+      const res = job.kind === 'add'
+        ? await db.addRecord({ databaseId: DATABASE_ID, properties })
+        : await db.updateRecord({ databaseId: DATABASE_ID, recordId: job.rid, properties });
+      const rid = job.rid || (res && (res.id || res._id)) || null;
+      cloudMirror.set(job.key, { rid, sig: job.sig });
+      batch.writes.push({ rec: job.rec, res });
+    }
+  }
 }
 function uploadNow() {
-  if (!db || !cloudReady) { syncPhase = 'idle'; return; }
-  if (uploadBusy) return;
-  if (!confirmOrigin) confirmOrigin = Date.now();
+  if (!db || !cloudReady || uploadBusy || !inChangeState()) return;
+  const records = stateRecords();
+  const batch = { version: editVersion, records, wanted: new Set(records.map(rec => rec.key)), touched: [], writes: [] };
   uploadBusy = true;
-  const since = lastLocalEditAt;
   syncPhase = 'uploading';
-  let lastWrites = [];
-  uploadCurrent().then(function (writes) {
+  uploadCurrent(batch).catch(err => {
+    console.error('[cloud] sync error:', err);   // 可能已有部分写入，先读回核对再重试
+  }).then(() => {
     uploadBusy = false;
-    lastWrites = writes || [];
-    if (lastLocalEditAt !== since) { beginQuiet(); return; }
-    confirmUpload(since, lastWrites);
-  }).catch(function (err) {
-    uploadBusy = false;
-    console.error('[cloud] sync error:', err);
-    toast('网络不稳定，这次改动没能上传');
-    beginQuiet();
-  });
-}
-function sameVisible(rows) {
-  const cloudRecs = recordsOf(stateFromRows(rows)), localRecs = recordsOf(state);
-  if (cloudRecs.length !== localRecs.length) return false;
-  const cloudSig = new Map(cloudRecs.map(rec => [rec.key, recSig(rec.fields)]));
-  for (const rec of localRecs) if (cloudSig.get(rec.key) !== recSig(rec.fields)) return false;
-  for (const rec of cloudRecs) if (!localRecs.some(item => item.key === rec.key)) return false;
-  return true;
-}
-function writesMatch(writes) {
-  return (writes || []).every(function (item) {
-    const fields = visibleFromWrite(item.res);
-    return !fields || recSig(fields) === item.sig;
-  });
-}
-function giveUpToCloud(rows) {
-  toast('网络异常');
-  clearTimeout(confirmTimer); confirmTimer = 0;
-  confirmOrigin = 0; confirmWait = 0;
-  if (rows && rows.length) adoptCloudRows(rows, false);
-  if (syncPhase === 'confirm') syncPhase = 'idle';
-}
-function confirmUpload(since, writes) {
-  if (uploadBusy || confirmBusy || lastLocalEditAt !== since) return;
-  if (syncPhase !== 'uploading' && syncPhase !== 'confirm') return;
-  syncPhase = 'confirm';
-  confirmBusy = true;
-  clearTimeout(confirmTimer);
-  cloudQueryAll(undefined, []).then(function (rows) {
-    confirmBusy = false;
-    if (syncPhase !== 'confirm' || lastLocalEditAt !== since) return;
-    if (rows && rows.length && sameVisible(rows) && writesMatch(writes)) { syncPhase = 'idle'; return; }
-    if (confirmOrigin && Date.now() - confirmOrigin >= 10000) { giveUpToCloud(rows); return; }
-    if (confirmWait >= 2000) { confirmWait = 0; uploadNow(); return; }
-    confirmTimer = setTimeout(function () { confirmWait += 500; confirmUpload(since, writes); }, 500);
-  }).catch(function (err) {
-    confirmBusy = false;
-    console.error('[cloud] pull error:', err);
-    if (syncPhase !== 'confirm' || lastLocalEditAt !== since) return;
-    if (confirmOrigin && Date.now() - confirmOrigin >= 10000) {
-      cloudQueryAll(undefined, []).then(function (rows) { if (syncPhase === 'confirm' && lastLocalEditAt === since) giveUpToCloud(rows); }).catch(function () { if (syncPhase === 'confirm' && lastLocalEditAt === since) giveUpToCloud(null); });
+    if (batch.version !== editVersion) {
+      if (syncPhase === 'quiet' && !quietTimer) uploadNow();
       return;
     }
-    confirmTimer = setTimeout(function () { confirmWait += 500; confirmUpload(since, writes); }, 500);
+    batch.confirmStarted = Date.now();
+    if (!confirmOrigin) confirmOrigin = batch.confirmStarted;
+    confirmUpload(batch);
+  });
+}
+function sameVisible(mirror, records) {
+  return mirror.size === records.length && records.every(rec => mirror.get(rec.key)?.sig === recSig(rec.fields));
+}
+function writesMatch(writes) {
+  return writes.every(({ rec, res }) =>
+    Object.entries(visibleFromWrite(res)).every(([key, value]) => value === rec.fields[key]));
+}
+function retryConfirmation(batch, rows, mirror) {
+  const now = Date.now();
+  if (now - confirmOrigin >= 10000) {
+    confirmOrigin = 0;
+    syncPhase = 'idle';
+    if (mirror) adoptCloudState(stateFromRows(rows), mirror);
+    toast('网络异常');
+    return;
+  }
+  if (now - batch.confirmStarted >= 2000) {
+    if (mirror) for (const key of batch.touched) {
+      const row = mirror.get(key);
+      if (row) cloudMirror.set(key, row);
+      else if (!batch.wanted.has(key)) cloudMirror.delete(key);
+    }
+    uploadNow();
+    return;
+  }
+  confirmTimer = setTimeout(() => { confirmTimer = 0; confirmUpload(batch); }, 500);
+}
+function confirmUpload(batch) {
+  if (batch.version !== editVersion) return;
+  if (syncPhase !== 'uploading' && syncPhase !== 'confirm') return;
+  syncPhase = 'confirm';
+  cloudQueryAll().then(rows => {
+    if (syncPhase !== 'confirm' || batch.version !== editVersion) return;
+    const mirror = mirrorFromRows(rows);
+    if (sameVisible(mirror, batch.records) && writesMatch(batch.writes)) {
+      cloudMirror = mirror;
+      confirmOrigin = 0;
+      syncPhase = 'idle';
+      return;
+    }
+    retryConfirmation(batch, rows, mirror);
+  }).catch(err => {
+    if (syncPhase !== 'confirm' || batch.version !== editVersion) return;
+    console.error('[cloud] pull error:', err);
+    retryConfirmation(batch);
   });
 }
 function pullCloud() {
   if (!db || !cloudReady || document.hidden || DND.act || cloudPulling || inChangeState()) return;
   cloudPulling = true;
-  const sinceEdit = lastLocalEditAt;
-  cloudQueryAll(undefined, []).then(function (rows) {
+  const version = editVersion;
+  cloudQueryAll().then(rows => {
     cloudPulling = false;
-    if (!rows || !rows.length || document.hidden || DND.act || inChangeState() || lastLocalEditAt !== sinceEdit) return;
-    if (mirrorFromRows(rows)) adoptCloudRows(rows, false);
-  }).catch(function (err) { cloudPulling = false; console.error('[cloud] pull error:', err); });
+    if (document.hidden || DND.act || inChangeState() || version !== editVersion) return;
+    const next = stateFromRows(rows), mirror = mirrorFromRows(rows, next);
+    if (!sameMirror(cloudMirror, mirror)) adoptCloudState(next, mirror);
+  }).catch(err => { cloudPulling = false; console.error('[cloud] pull error:', err); });
 }
 function subscribeCloud() {
   if (!db || typeof db.onUpdated !== 'function') return;
-  db.onUpdated(function (payload) {
-    var ids = (payload && payload.databaseIds) || [];
-    if (ids.indexOf(DATABASE_ID) === -1) return;
-    if (syncPhase === 'idle') pullCloud();
+  db.onUpdated(payload => {
+    const ids = (payload && payload.databaseIds) || [];
+    if (ids.indexOf(DATABASE_ID) === -1 || inChangeState()) return;
+    clearTimeout(pullTimer);
+    pullTimer = setTimeout(() => { pullTimer = 0; pullCloud(); }, 300);
   });
+}
+/* 首次回读前已有主动改动时，只把这段时间内的增删改合入云端快照。 */
+function mergeOpeningEdits(rows, before) {
+  const merged = new Map();
+  for (const row of rows) {
+    const key = row['记录ID'];
+    if (key && !merged.has(key)) merged.set(key, row);
+  }
+  const previous = new Map(before.map(rec => [rec.key, recSig(rec.fields)]));
+  for (const rec of stateRecords()) {
+    const oldSig = previous.get(rec.key);
+    const canMerge = oldSig === undefined || merged.has(rec.key) || rec.fields['类型'] === '设置';
+    if (canMerge && oldSig !== recSig(rec.fields)) merged.set(rec.key, { '记录ID': rec.key, ...rec.fields });
+    previous.delete(rec.key);
+  }
+  for (const key of previous.keys()) merged.delete(key);
+  return stateFromRows([...merged.values()]);
 }
 function cloudBoot() {
   if (!db) return;
-  const t0 = Date.now();
-  cloudQueryAll(undefined, []).then(function (rows) {
+  const version = editVersion, before = stateRecords();
+  cloudQueryAll().then(rows => {
     subscribeCloud();
-    if (rows && rows.length) {
-      if (lastLocalEditAt > t0) { mirrorFromRows(rows); cloudReady = true; markLocalEdit(); return; }   // 仅这次打开后、云端结果返回前已有的改动才回推；打开本身一律采用云端
-      cloudReady = true;
-      adoptCloudRows(rows);
-      toast('已连接云端，数据自动同步');
-    } else {
-      cloudReady = true;
-      if (state.groups.length || state.todos.length) markLocalEdit();   // 空库不主动写入，真正新增后再同步   // 云端为空：把当前数据推上去
-      toast('已连接云端，数据自动同步');
+    cloudReady = true;
+    const edited = version !== editVersion;
+    if (rows.length) {
+      const next = stateFromRows(rows), mirror = mirrorFromRows(rows, next);
+      adoptCloudState(edited ? mergeOpeningEdits(rows, before) : next, mirror);
     }
-  }).catch(function (err) { console.error('[cloud] load error:', err); toast('云端连接失败，本次使用本地数据'); });
+    if (edited) beginQuiet();
+    toast('已连接云端，数据自动同步');
+  }).catch(err => { console.error('[cloud] load error:', err); toast('云端连接失败，本次使用本地数据'); });
 }
 
 /* 示例数据：与配套 CSV 共用固定的初始排期；只更新示例内容和同一排期线内的类别 */
@@ -2737,7 +2820,7 @@ function settleBeforeEdit() {
   let changed = rollTime();
   layout = computeLayout();
   if (refreshPlans(layout)) changed = true;
-  if (changed) { save(); markLocalEdit(); }
+  if (changed) save();
 }
 /* 单个分段的时间标注，如「明天 上午–下午」 */
 function segLabel(sg, now) {
@@ -2837,7 +2920,7 @@ function render() {
   const ae = document.activeElement, activeId = ae && ae.tagName === 'INPUT' ? ae.id : null;
   layout = computeLayout();
   if (!DND.act && refreshPlans(layout)) changed = true;
-  if (changed) { save(); markLocalEdit(); }
+  if (changed) save();
   lastNowKey = layout.now.d + layout.now.s;
   renderHeader(); renderCalendar(); renderList();
   for (const k in vals) { const el = document.getElementById(k); if (el) el.value = vals[k]; }
@@ -2902,7 +2985,11 @@ function fitCalendarLabels() {
     tn.data = lo > 0 ? full.slice(0, lo) + '…' : full.slice(0, 1);
   });
 }
-window.addEventListener('resize', () => { clearTimeout(fitTimer); fitTimer = setTimeout(fitCalendarLabels, 120); });
+function queueCalendarLabelFit() {
+  clearTimeout(fitTimer);
+  fitTimer = setTimeout(fitCalendarLabels, 120);
+}
+window.addEventListener('resize', queueCalendarLabelFit);
 /* --- 拖动占位的虚线轮廓：按该待办在每一格里合并后的整体形状（含台阶与内外圆角）绘制一条 SVG 路径 --- */
 function drawDragOutline() {
   document.querySelectorAll('#grid svg.dsvg').forEach(s => s.remove());
@@ -3218,24 +3305,48 @@ function insRowHtml() {
   return `<div class="addrow ins"><input id="insInput" placeholder="新待办…" enterkeyhint="done" autocomplete="off"><button class="primary" data-act="ins-ok">添加</button><button data-act="ins-cancel">取消</button></div>`;
 }
 function insAt(t, where) { return state.addAt && state.addAt.refId === t.id && state.addAt.where === where ? insRowHtml() : ''; }
-function insertTodoAt(title) {
-  const at = state.addAt, ref = todoById(at.refId); if (!ref) return null;
+function insertTodoAt(ref, where, title) {
+  const before = where === 'before';
   const nt = { id: uid(), groupId: ref.groupId, title, est: null, sched: false, done: false, archived: false, rest: false };
   if (state.view === 'sched' && ref.sched && !ref.done) {   // 排期视图：按排期顺序插入，后续自动顺延
+    const refSpan = layout.spans.get(ref.id);
+    const checkAbove = before && !!refSpan;
+    const snap = checkAbove ? snapSched() : null;
     nt.sched = true; nt.est = 0.5;
     state.todos.push(nt); state.schedOrder.push(nt.id);
-    const rs = layout.spans.get(ref.id);
-    if (layout.pinned.has(ref.id) && rs) {   // 定死 / 进行中的待办不按顺序排：以它前后按顺序排的同线待办为参照
-      const track = trackOf(ref), flowIds = layout.order.filter(id => !layout.fillers.has(id) && !layout.pinned.has(id) && id !== nt.id && trackOf(itemById(id)) === track);
-      if (at.where === 'before') { const p = flowIds.filter(id => cmpSlot(layout.spans.get(id).start, rs.start) < 0).pop(); applyInsertion(nt.id, p ? { pos: 'after', id: p } : { pos: 'front' }); }
-      else { const n = flowIds.find(id => cmpSlot(layout.spans.get(id).start, rs.start) > 0); applyInsertion(nt.id, n ? { pos: 'before', id: n } : { pos: 'end' }); }
-    } else applyInsertion(nt.id, { pos: at.where === 'before' ? 'before' : 'after', id: ref.id });
+    if (layout.pinned.has(ref.id) && refSpan) {   // 以固定或进行中的待办前后、按顺序排的同线待办为参照
+      const track = trackOf(ref);
+      const flowIds = layout.order.filter(id => !layout.fillers.has(id) && !layout.pinned.has(id) && trackOf(itemById(id)) === track);
+      if (before) {
+        const prev = flowIds.filter(id => cmpSlot(layout.spans.get(id).start, refSpan.start) < 0).pop();
+        applyInsertion(nt.id, prev ? { pos: 'after', id: prev } : { pos: 'front' });
+      } else {
+        const next = flowIds.find(id => cmpSlot(layout.spans.get(id).start, refSpan.start) > 0);
+        applyInsertion(nt.id, next ? { pos: 'before', id: next } : { pos: 'end' });
+      }
+    } else applyInsertion(nt.id, { pos: where, id: ref.id });
+    if (checkAbove) {
+      const fitsAbove = lay => {
+        const inserted = lay.spans.get(nt.id), anchor = lay.spans.get(ref.id);
+        return inserted && anchor && cmpSlot(inserted.end, anchor.start) < 0;
+      };
+      let next = computeLayout();
+      if (!fitsAbove(next) && next.pinned.has(ref.id) && !isFixed(ref)) {
+        // 进行中的待办优先占位。插入上方时让它的剩余时段跟在新待办后面，保留已完成用时。
+        ref.st = null;
+        applyInsertion(ref.id, { pos: 'after', id: nt.id });
+        next = computeLayout();
+      }
+      const why = newIssueText(next, nt.id) || (!fitsAbove(next) ? `「${displayTitle(ref)}」上方没有可用的排期时段` : '');
+      if (why) { restoreSched(snap); return why; }
+      refreshPlans(next);
+    }
   } else {                                                   // 分组视图 / 未排期锚点：插入到数组相邻位置
     const i = state.todos.indexOf(ref);
-    state.todos.splice(at.where === 'before' ? i : i + 1, 0, nt);
+    state.todos.splice(before ? i : i + 1, 0, nt);
     state.schedOrder.push(nt.id);
   }
-  return nt;
+  return '';
 }
 let insBusy = false;
 function insertAtCommit() {
@@ -3246,8 +3357,10 @@ function insertAtCommit() {
     const at = state.addAt; if (!at) return;
     const inp = document.getElementById('insInput');
     const title = (inp ? inp.value : '').trim();
-    const nt = title ? insertTodoAt(title) : null;
-    if (!nt) { state.addAt = null; render(); return; }   // 空标题或锚点已失效：取消
+    const ref = todoById(at.refId);
+    if (!title || !ref) { state.addAt = null; render(); return; }   // 空标题或锚点已失效：取消
+    const why = insertTodoAt(ref, at.where, title);
+    if (why) { toast(why, 4200); return; }
     if (inp) inp.value = '';                             // 清空 DOM 值，防止 render() 的 vals 快照回填旧文本
     state.addAt = null;                                  // 添加完成即退出，不再进入添加下一个的状态
     commit();
@@ -3255,7 +3368,8 @@ function insertAtCommit() {
 }
 function shiftMonth(n) {
   const [y, m] = state.calMonth.split('-').map(Number);
-  const d = new Date(y, m - 1 + n, 1); state.calMonth = monthStr(fmt(d)); commit();
+  const d = new Date(y, m - 1 + n, 1); state.calMonth = monthStr(fmt(d));
+  if (DND.act) render(); else commit();
 }
 function flash(el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
 /* 危险操作的确认弹窗（页面内 DOM 实现，任何环境可用，不用原生 confirm） */
@@ -4388,10 +4502,121 @@ function endDrag(cancel) {
     }
   }
   suppressClickUntil = performance.now() + 400;
-  commit();
+  if (cancel) { save(); render(); } else commit();
 }
 
 /* ================= boot ================= */
+/* 桌面分栏只保存本浏览器的显示偏好，与待办数据分开。 */
+{
+  const handle = document.getElementById('panelResize');
+  const board = handle.closest('.layout');
+  const calendar = document.getElementById('calPanel'), list = document.getElementById('listPanel');
+  const prefKey = STORE_KEY + '-desktop-layout';
+  let share = 13 / 22, drag = null, frame = 0;
+  try {
+    const saved = JSON.parse(localStorage.getItem(prefKey));
+    if (saved && Number.isFinite(saved.share) && saved.share > 0 && saved.share < 1) share = saved.share;
+  } catch (e) { }
+
+  function savePreference() {
+    try { localStorage.setItem(prefKey, JSON.stringify({ share })); } catch (e) { }
+  }
+  function measure() {
+    if (!handle.offsetWidth) return null;
+    const width = calendar.getBoundingClientRect().width;
+    const total = width + list.getBoundingClientRect().width;
+    const style = getComputedStyle(board);
+    const min = parseFloat(style.getPropertyValue('--calendar-min'));
+    const max = total - parseFloat(style.getPropertyValue('--list-min'));
+    return { width, total, min, max };
+  }
+  function updateDivider() {
+    const sizes = measure();
+    if (!sizes) return;
+    const percent = width => Math.round(width / sizes.total * 100);
+    const value = percent(sizes.width);
+    handle.setAttribute('aria-valuemin', percent(sizes.min));
+    handle.setAttribute('aria-valuemax', percent(sizes.max));
+    handle.setAttribute('aria-valuenow', value);
+    handle.setAttribute('aria-valuetext', '日历 ' + value + '%');
+    queueCalendarLabelFit();
+  }
+  const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(updateDivider) : null;
+  function setShare(value) {
+    share = value;
+    board.style.setProperty('--calendar-share', String(share));
+    if (!observer) updateDivider();
+  }
+  const clampWidth = (width, sizes) => Math.max(sizes.min, Math.min(sizes.max, width));
+  function moveResize() {
+    frame = 0;
+    if (!drag) return;
+    const { sizes, x, startX, startShare } = drag;
+    const width = clampWidth(sizes.width + x - startX, sizes);
+    const next = Math.abs(width - sizes.width) < .5 ? startShare : width / sizes.total;
+    if (share !== next) setShare(next);
+  }
+  function finishResize(keep) {
+    if (!drag) return;
+    cancelAnimationFrame(frame); frame = 0;
+    const { pointerId, startShare } = drag;
+    if (keep) moveResize();
+    else setShare(startShare);
+    drag = null;
+    handle.classList.remove('is-active');
+    document.body.classList.remove('resizing-panels');
+    if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+    if (keep && share !== startShare) savePreference();
+  }
+  handle.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || e.button !== 0 || drag || DND.act || DND.cand) return;
+    const sizes = measure();
+    if (!sizes) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeMenu();
+    handle.setPointerCapture(e.pointerId);
+    drag = { pointerId: e.pointerId, sizes, startX: e.clientX, x: e.clientX, startShare: share };
+    handle.classList.add('is-active');
+    document.body.classList.add('resizing-panels');
+  });
+  handle.addEventListener('pointermove', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    drag.x = e.clientX;
+    if (!frame) frame = requestAnimationFrame(moveResize);
+  });
+  handle.addEventListener('pointerup', e => {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    drag.x = e.clientX;
+    finishResize(true);
+  });
+  for (const event of ['pointercancel', 'lostpointercapture']) {
+    handle.addEventListener(event, e => { if (drag && e.pointerId === drag.pointerId) finishResize(false); });
+  }
+  handle.addEventListener('click', e => e.stopPropagation());
+  handle.addEventListener('keydown', e => {
+    const sizes = measure();
+    if (!sizes || drag || DND.act) return;
+    let width = sizes.width;
+    if (e.key === 'ArrowLeft') width -= 24;
+    else if (e.key === 'ArrowRight') width += 24;
+    else if (e.key === 'Home') width = sizes.min;
+    else if (e.key === 'End') width = sizes.max;
+    else return;
+    e.preventDefault();
+    width = clampWidth(width, sizes);
+    if (Math.abs(width - sizes.width) < .5) return;
+    setShare(width / sizes.total);
+    savePreference();
+  });
+  window.addEventListener('blur', () => finishResize(false));
+  window.addEventListener('resize', () => { finishResize(false); updateDivider(); });
+
+  setShare(share);
+  updateDivider();
+  if (observer) { observer.observe(calendar); observer.observe(list); }
+}
+
 if (rollTime()) save();   // 旧数据先结算并保存初始化记录，再处理残留的指定起始时间
 if (materializeFillers()) save();   // 旧数据里残留的起始时间约束 → 落成真实的「其他」
 /* 信息按钮「i」字体自适应定位：Palatino 与回退字体（Georgia/Noto）字形结构不同，位置分别用实测校准值（Palatino: x12.2/y16.6；回退: x11.92/y17.17） */

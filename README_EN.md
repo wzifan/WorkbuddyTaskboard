@@ -32,13 +32,26 @@
 
 #### Getting Started
 
-###### 1. Clone the repository
+##### 1. Download the project
+
+###### Option 1 — Clone with Git
+
+Run this command.
 
 ```shell
 git clone https://github.com/wzifan/WorkbuddyTaskboard.git
 ```
 
-###### 2. Deploy the local files to the WorkBuddy Library for cloud synchronization and access across devices
+###### Option 2 — Download a ZIP from the repository
+
+- On Gitee, click **Clone/Download** (`克隆/下载`), then **Download ZIP** (`下载zip`).
+- On GitHub, click **Code**, then **Download ZIP**.
+
+###### Option 3 — Download a release ZIP
+
+In the right sidebar, select a version under **Releases**, such as `v1.8.1`. Then choose **Source code (zip)** from the release downloads.
+
+##### 2. Deploy the local files to the WorkBuddy Library for cloud synchronization and access across devices
 
 In WorkBuddy, set the working directory to `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}` and select the `工作台搭建师` (Workbench Builder) expert. Use the prompt provided in `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}/加载到云端的提示词.txt`.
 

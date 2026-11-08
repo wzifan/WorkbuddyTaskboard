@@ -32,13 +32,28 @@
 
 #### 使用方式
 
-###### 1. 下载本项目至本地
+##### 1. 下载本项目至本地
+
+###### 方式1
+
+运行命令：
 
 ```shell
 git clone https://github.com/wzifan/WorkbuddyTaskboard.git
 ```
 
-###### 2. 使用将本地文件同步至Workbuddy资料库，使其成为可云端同步、多端访问的待办工作台
+###### 方式2
+
+Gitee：点击 `克隆/下载` $\rightarrow$ `下载zip`
+
+Github：点击 `code`  $\rightarrow$ `Download Zip`
+
+###### 方式3
+
+点击右边 `发行版` 下面的版本号（如 `v1.8.1` ），然后点击 `下载` 下面的`下载 Source code (zip)`
+
+##### 2. 使用将本地文件同步至Workbuddy资料库，使其成为可云端同步、多端访问的待办工作台
+
 工作目录选择 `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}` ，专家选择 `工作台搭建师`，提示词在 `WorkbuddyTaskboard/待办工作台_公开_云端同步/{版本号}/加载到云端的提示词.txt` 中。
 
 #### 开源协议
