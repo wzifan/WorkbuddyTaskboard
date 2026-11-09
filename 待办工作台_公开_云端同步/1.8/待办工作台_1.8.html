@@ -104,6 +104,7 @@ body.resizing-panels,body.resizing-panels *{cursor:col-resize!important;user-sel
 .num{width:20px;height:20px;line-height:20px;border-radius:999px;text-align:center;font-size:12px;font-weight:600;flex:none;color:var(--text)}
 .num:hover{box-shadow:0 0 0 2px var(--accent-bg)}
 .day.off .num{color:#c2554f}
+.day.off:not(.today) .num:hover{box-shadow:0 0 0 2px #fde3e1}
 .day.today .num{background:color-mix(in srgb,var(--accent) 94%,#fff);color:#fff}
 .day.pastday .num{color:var(--faint)}
 .badge{font-size:9px;line-height:14px;padding:0 3px;border-radius:4px;flex:none;font-weight:700}
