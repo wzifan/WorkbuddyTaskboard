@@ -416,6 +416,8 @@ html.coarse .est button:disabled,html.coarse .est button:disabled.is-pressed{bac
 .dlg .btn-ok:disabled{opacity:.45;cursor:not-allowed;filter:none}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1c2330;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:120;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:90vw;pointer-events:none;opacity:0;transition:opacity .2s}
 .toast.show{opacity:1}
+.toast.cloud-lock{opacity:1;max-width:min(92vw,560px);text-align:center;line-height:1.6}
+.toast.cloud-lock.failed{background:#a4383e}
 /* 拖动跟随物：.ghost 锚定在指尖（transform-origin 0 0），.gin 负责相对指尖的偏移与外观 */
 .ghost{position:fixed;left:0;top:0;z-index:1000;pointer-events:none;will-change:transform;transform-origin:0 0}
 .ghost .gin{background:#fff;border-radius:9px;box-shadow:0 14px 34px -10px rgba(16,24,40,.4)}
@@ -757,6 +759,7 @@ function load() { try { const s = JSON.parse(localStorage.getItem(STORE_KEY)); i
 function save() { try { const { dragId, addingGroup, addAt, ...rest } = state; localStorage.setItem(STORE_KEY, JSON.stringify(rest)); } catch (e) { } }
 /* 提交改动并重绘；若这次改动让某条待办新变成排不下，弹出提示并返回 true（调用方据此不再覆盖提示） */
 function commit() {
+  if (!cloudReady) { syncCloudNotice(); return false; }
   const before = new Set(layout ? layout.issues.keys() : []);
   rollTime();   // 先结算旧排期，再把本次操作留下的空档落成待办
   materializeFillers(); save(); render(); markLocalEdit();
@@ -772,7 +775,8 @@ function commit() {
    不一致时每 0.5 秒复查，2 秒后重传，累计 10 秒仍不一致则提示并采用读到的云端数据。
    新的主动改动使旧批次失效。空闲时每 0.5 秒读取。 */
 const WRITE_GAP_MS = 80;   // 增删会连带更新多行顺序，串行请求也要给资料库留出限流余量
-let cloudMirror = new Map(), cloudReady = false, editVersion = 0;
+let cloudMirror = new Map(), cloudReady = !db, editVersion = 0;
+let cloudBootFailed = false;
 let syncPhase = 'idle', quietTimer = 0, confirmTimer = 0, pullTimer = 0;
 let uploadBusy = false, cloudPulling = false, lastWriteAt = -Infinity, confirmOrigin = 0;
 
@@ -785,9 +789,9 @@ function beginQuiet() {
   quietTimer = setTimeout(() => { quietTimer = 0; uploadNow(); }, 250);
 }
 function markLocalEdit() {
-  if (!db) return;
+  if (!db || !cloudReady) return;
   editVersion++;
-  if (cloudReady) beginQuiet();
+  beginQuiet();
 }
 function flushCloudSync() {   // 关闭 / 切走时，正在安静等待的改动立刻按当前状态上传
   if (!db || !cloudReady || syncPhase !== 'quiet') return;
@@ -1062,7 +1066,9 @@ function mergeOpeningEdits(rows, before) {
   return stateFromRows([...merged.values()]);
 }
 function cloudBoot() {
-  if (!db) return;
+  if (!db) { cloudReady = true; syncCloudNotice(); return; }
+  cloudBootFailed = false;
+  syncCloudNotice();
   const version = editVersion, before = stateRecords();
   cloudQueryAll().then(rows => {
     subscribeCloud();
@@ -1073,8 +1079,14 @@ function cloudBoot() {
       adoptCloudState(edited ? mergeOpeningEdits(rows, before) : next, mirror);
     }
     if (edited) beginQuiet();
+    cloudBootFailed = false;
+    syncCloudNotice();
     toast('已连接云端，数据自动同步');
-  }).catch(err => { console.error('[cloud] load error:', err); toast('云端连接失败，本次使用本地数据'); });
+  }).catch(err => {
+    cloudReady = false; cloudBootFailed = true;
+    syncCloudNotice();
+    console.error('[cloud] load error:', err);
+  });
 }
 
 /* 示例数据：与配套 CSV 共用固定的初始排期；只更新示例内容和同一排期线内的类别 */
@@ -2518,6 +2530,7 @@ function syncProgress(t) {
 function setEst(t, n) {
   const floor = dnOf(t);
   if (n == null || n <= 0) {
+    if (floor > 0 && t.done) { t.est = null; t.dn = 0; t.sched = false; t.nb = null; t.st = null; t.plan = null; return; }   // 已完成可减到 0：预估和已完成都清空，仍保持勾选完成
     if (floor > 0) { t.est = floor; t.done = true; return; }
     t.est = null; t.dn = 0; t.sched = false; t.nb = null; t.st = null; t.plan = null; t.done = false; return;
   }
@@ -3284,10 +3297,56 @@ document.addEventListener('pointerout', e => {
 });
 document.addEventListener('pointerdown', hideMoveTip);
 document.addEventListener('scroll', hideMoveTip, true);
+function syncCloudNotice() {
+  const el = document.getElementById('toast');
+  clearTimeout(toast.t);
+  document.body.classList.toggle('cloud-readonly', !cloudReady);
+  el.classList.toggle('cloud-lock', !cloudReady);
+  el.classList.toggle('failed', !cloudReady && cloudBootFailed);
+  if (!cloudReady) {
+    el.textContent = cloudBootFailed ? '云端连接失败，本次使用本地数据，请刷新页面' : '正在连接云端，当前仅可浏览，数据不可修改';
+    el.classList.add('show');
+  }
+}
 function toast(msg, ms) {
-  const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show');
+  if (!cloudReady) { syncCloudNotice(); return; }
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.remove('cloud-lock', 'failed'); el.classList.add('show');
   clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), ms || 2400);
 }
+/* 首次云端连接完成前只允许浏览，避免基于旧缓存的修改进入首次合并和上传。 */
+const CLOUD_BROWSE_ACTS = new Set(['view', 'prev-month', 'next-month', 'today-month', 'cal-info', 'hn-tip', 'goto', 'g-fold', 'menu', 'm-prop']);
+const ARCH_BROWSE_SUMMARY = 'details.archived > summary, details.arch-cat > summary, details.arch-grp > summary';
+function cloudBrowseClick(e) {
+  const t = e.target;
+  if (!(t instanceof Element)) return true;
+  if (t.closest('#panelResize, .blk.item, #dlgCancel, #dlgX') || t.id === 'mask') return true;
+  const sum = t.closest(ARCH_BROWSE_SUMMARY);
+  if (sum && !t.closest('button, a, input, textarea, select')) return true;
+  const btn = t.closest('[data-act]');
+  return !!(btn && CLOUD_BROWSE_ACTS.has(btn.dataset.act));
+}
+function blockCloudEdit(e) {
+  if (cloudReady || cloudBrowseClick(e)) return;
+  e.preventDefault(); e.stopImmediatePropagation(); syncCloudNotice();
+}
+document.addEventListener('click', blockCloudEdit, true);
+for (const type of ['beforeinput', 'input', 'change', 'paste', 'drop', 'submit', 'focusout']) document.addEventListener(type, e => {
+  if (cloudReady) return;
+  e.preventDefault(); e.stopImmediatePropagation(); syncCloudNotice();
+}, true);
+document.addEventListener('keydown', e => {
+  if (cloudReady) return;
+  const t = e.target;
+  if (e.key === 'Escape' || e.key === 'Tab' || e.key === 'F5' || e.ctrlKey || e.metaKey) return;
+  if (t instanceof Element && t.closest('#panelResize')) return;
+  if (t instanceof Element && !t.closest('input, textarea, select, [contenteditable="true"]') && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) return;
+  if (t instanceof Element && t.closest('#dlgCancel, #dlgX') && (e.key === 'Enter' || e.key === ' ')) return;
+  const btn = t instanceof Element ? t.closest('[data-act]') : null;
+  if (btn && CLOUD_BROWSE_ACTS.has(btn.dataset.act) && (e.key === 'Enter' || e.key === ' ')) return;
+  const sum = t instanceof Element ? t.closest(ARCH_BROWSE_SUMMARY) : null;
+  if (sum && (e.key === 'Enter' || e.key === ' ')) return;
+  e.preventDefault(); e.stopImmediatePropagation(); syncCloudNotice();
+}, true);
 function addTodo(gid, title, kind) {   // kind：'rest' 休息 / 'other' 内容为「其他」的普通待办 / 其它值 = 普通
   const g = groupById(gid); if (!g) { toast('请先创建一个分组'); return false; }
   const special = kind === 'rest' || kind === 'other';
@@ -3370,7 +3429,7 @@ function insertAtCommit() {
 function shiftMonth(n) {
   const [y, m] = state.calMonth.split('-').map(Number);
   const d = new Date(y, m - 1 + n, 1); state.calMonth = monthStr(fmt(d));
-  if (DND.act) render(); else commit();
+  if (DND.act || !cloudReady) render(); else commit();
 }
 function flash(el) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
 /* 危险操作的确认弹窗（页面内 DOM 实现，任何环境可用，不用原生 confirm） */
@@ -3611,7 +3670,7 @@ function locateTodo(id) {
 function gotoCalendar(id) {
   const span = layout.spans.get(id); if (!span) return;
   const m = monthStr(span.start.d);
-  if (m !== state.calMonth) { state.calMonth = m; commit(); }
+  if (m !== state.calMonth) { state.calMonth = m; commitViewChange(); }
   const blocks = document.querySelectorAll(`#grid .blk[data-id="${id}"]`);
   if (blocks.length) { blocks[0].scrollIntoView({ behavior: 'smooth', block: 'nearest' }); flashCalendar(id); }
 }
@@ -3690,11 +3749,12 @@ if (hoverFineMQ.addEventListener) hoverFineMQ.addEventListener('change', closeCa
 else if (hoverFineMQ.addListener) hoverFineMQ.addListener(closeCalInfoIfDesktop);
 
 /* --- 点击分发：各 act 的判断与副作用按域放在下面的函数里 --- */
+function commitViewChange() { if (cloudReady) commit(); else render(); }
 function actCal(act, btn, e) {
-  if (act === 'view') { state.view = btn.dataset.view; commit(); return; }
+  if (act === 'view') { state.view = btn.dataset.view; commitViewChange(); return; }
   if (act === 'prev-month') { shiftMonth(-1); return; }
   if (act === 'next-month') { shiftMonth(1); return; }
-  if (act === 'today-month') { state.calMonth = monthStr(today()); commit(); return; }
+  if (act === 'today-month') { state.calMonth = monthStr(today()); commitViewChange(); return; }
   if (act === 'cal-info') {
     const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     if (!canHover || e.detail === 0) {   // 无悬停的设备点按切换；桌面悬停不切换，避免点一下就钉住
@@ -3842,7 +3902,7 @@ function actGroup(act, id, btn, wasOpenOn) {
       state.collapsed[id] = true;
       if (state.addAt) { const ref = todoById(state.addAt.refId); if (ref && ref.groupId === id) state.addAt = null; }
     }
-    commit(); fix(); requestAnimationFrame(fix);
+    commitViewChange(); fix(); requestAnimationFrame(fix);
     return;
   }
   if (act === 'g-rename') {
@@ -4083,7 +4143,7 @@ function persistArch(el) {
     if (el.open) { if (state.archFold[key]) { delete state.archFold[key]; changed = true; } }
     else if (!state.archFold[key]) { state.archFold[key] = true; changed = true; }
   }
-  if (changed) { save(); markLocalEdit(); }
+  if (changed && cloudReady) { save(); markLocalEdit(); }
 }
 document.addEventListener('click', e => {
   const det = archDetailsOf(e.target.closest && e.target.closest(archSumSel));
@@ -4242,6 +4302,7 @@ document.addEventListener('pointerdown', e => {
   if ((e.pointerType === 'mouse' && e.button !== 0) || DND.act || DND.cand) return;
   const tgt = e.target; if (!(tgt instanceof Element)) return;
   DND.swipe = (e.pointerType !== 'mouse' && tgt.closest('#grid')) ? { x: e.clientX, y: e.clientY, id: e.pointerId } : null;   // 触屏在日历上左右滑动切换月份
+  if (!cloudReady) return;   // 锁定期间保留触屏滑动翻月，但不创建任何拖动候选
   let kind = null, el = null, hold = 0;
   const gh = tgt.closest('.g-h');
   if (gh && gh.closest('.group') && !tgt.closest('input,textarea,select')) { kind = 'group'; el = gh.closest('.group'); hold = LONG_PRESS; }   // 分组：长按标题栏任意位置后拖动
@@ -4291,6 +4352,7 @@ function getScrollParent(el) {
   return document.scrollingElement || document.documentElement;
 }
 function startDrag(c, x, y) {
+  if (!cloudReady) { cancelCand(); return; }
   settleBeforeEdit();
   if ((c.kind === 'cal' || c.kind === 'sched') && !layout.spans.has(c.id)) { cancelCand(); render(); return; }
   clearTimeout(c.timer); if (c.pressEl) c.pressEl.classList.remove('pressing'); DND.cand = null; closeMenu(); markHov(null);
